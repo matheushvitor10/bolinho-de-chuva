@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!--
+    Front-end do Bolinho de Chuva.
+    O site em si é só HTML, CSS e JavaScript, e fica todo na pasta wwwroot.
+    Este projeto existe só pra o Visual Studio conseguir abrir o site com F5
+    (ele funciona como um servidor de arquivos simples).
+    Na hora de publicar, dá pra subir só a pasta wwwroot em qualquer hospedagem de site estático.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <!--
+      Roda em qualquer .NET a partir do 8 (inclusive o 9 e o 10), se o 8 não
+      estiver instalado no computador.
+    -->
+    <RollForward>Major</RollForward>
+    <!--
+      Roda com o mesmo "dotnet" que compilou o projeto. Assim não dá conflito
+      entre .NET de 32 bits (x86) e de 64 bits (x64) no Windows.
+    -->
+    <UseAppHost>false</UseAppHost>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>BolinhoDeChuva.Web</RootNamespace>
+  </PropertyGroup>
+
+</Project>

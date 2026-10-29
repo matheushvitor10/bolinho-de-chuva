@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!--
+    Back-end do Bolinho de Chuva (API).
+    Não usa nenhum pacote NuGet externo (nem para enviar email): tudo aqui vem do próprio .NET 8,
+    então é só abrir no Visual Studio e rodar.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <!--
+      Roda em qualquer .NET a partir do 8 (inclusive o 9 e o 10), se o 8 não
+      estiver instalado no computador.
+    -->
+    <RollForward>Major</RollForward>
+    <!--
+      Roda com o mesmo "dotnet" que compilou o projeto. Assim não dá conflito
+      entre .NET de 32 bits (x86) e de 64 bits (x64) no Windows.
+    -->
+    <UseAppHost>false</UseAppHost>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>BolinhoDeChuva.Api</RootNamespace>
+  </PropertyGroup>
+
+  <!-- Imagens do Bolin que vão dentro dos emails (ficam "embutidas" na API). -->
+  <ItemGroup>
+    <EmbeddedResource Include="Emails\bolin-email.jpg" />
+    <EmbeddedResource Include="Emails\bolin-avatar.png" />
+    <EmbeddedResource Include="Emails\bolin-alerta.png" />
+    <!-- Código do script do Google (a página de configuração entrega ele pronto pra copiar). -->
+    <EmbeddedResource Include="Google\BolinhoDeChuva.gs" />
+  </ItemGroup>
+
+  <!-- Arquivos gerados enquanto a API roda: não fazem parte do código. -->
+  <ItemGroup>
+    <Content Remove="dados\**" />
+    <Content Remove="emails-de-teste\**" />
+    <None Remove="emails-de-teste\**" />
+  </ItemGroup>
+
+</Project>

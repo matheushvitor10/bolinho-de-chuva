@@ -1,0 +1,94 @@
+# ============================================================================
+# Testes rápidos da API — o Visual Studio roda este arquivo direto:
+# abra ele e clique em "Enviar solicitação" (Send request) acima de cada bloco.
+# A API precisa estar rodando.
+# ============================================================================
+
+@api = http://localhost:5080
+
+### A API está no ar?
+GET {{api}}/api/status
+
+### Notícias de chuva e alagamento (regional | nacional | todas)
+GET {{api}}/api/noticias?abrangencia=todas
+
+### Clima de Ribeirão Preto
+GET {{api}}/api/clima
+
+### Zonas monitoradas
+GET {{api}}/api/enchentes
+
+### Situação do sensor da maquete
+GET {{api}}/api/sensor/status?zonaId=maquete-demo
+
+### Fingir uma leitura do ESP32: água a 15 cm (sensor a 28 cm, mediu 13 cm) → atenção
+POST {{api}}/api/sensor-leitura
+Content-Type: application/json
+
+{
+  "zonaId": "maquete-demo",
+  "distanciaCm": 13,
+  "alturaInstalacaoM": 0.28
+}
+
+### Fingir água a 19 cm (sensor mediu 9 cm) → perigo
+POST {{api}}/api/sensor-leitura
+Content-Type: application/json
+
+{
+  "zonaId": "maquete-demo",
+  "distanciaCm": 9,
+  "alturaInstalacaoM": 0.28
+}
+
+### Voltar a maquete para "seca" (sensor mediu 28 cm → nível 0)
+POST {{api}}/api/sensor-leitura
+Content-Type: application/json
+
+{
+  "zonaId": "maquete-demo",
+  "distanciaCm": 28,
+  "alturaInstalacaoM": 0.28
+}
+
+### ---------- Simulação da maquete ----------
+
+### Deixar a água com 15 cm (atenção)
+POST {{api}}/api/simulacao/maquete
+Content-Type: application/json
+
+{ "nivelCm": 15 }
+
+### Subir 3 cm
+POST {{api}}/api/simulacao/maquete
+Content-Type: application/json
+
+{ "variacaoCm": 3 }
+
+### ---------- Emails ----------
+
+### Diagnóstico do envio de email (o mesmo do "npm run teste-email")
+POST {{api}}/api/emails/diagnostico
+
+
+### Cadastrar um email (manda o email de boas-vindas do Bolin)
+POST {{api}}/api/emails/inscrever
+Content-Type: application/json
+
+{
+  "email": "seu.email@gmail.com"
+}
+
+### Email com erro de digitação (a API sugere a correção)
+POST {{api}}/api/emails/inscrever
+Content-Type: application/json
+
+{
+  "email": "fulano@gmail.com.br"
+}
+
+### Mandar um alerta de TESTE de temporal para todos os inscritos
+POST {{api}}/api/emails/teste-alerta?tipo=temporal
+
+### Mandar um alerta de TESTE de alagamento para todos os inscritos
+POST {{api}}/api/emails/teste-alerta?tipo=zona

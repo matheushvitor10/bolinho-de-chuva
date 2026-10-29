@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Simulador do sensor: finge ser o ESP32 enquanto o hardware não está pronto. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <!--
+      Roda em qualquer .NET a partir do 8 (inclusive o 9 e o 10), se o 8 não
+      estiver instalado no computador.
+    -->
+    <RollForward>Major</RollForward>
+    <!--
+      Roda com o mesmo "dotnet" que compilou o projeto. Assim não dá conflito
+      entre .NET de 32 bits (x86) e de 64 bits (x64) no Windows.
+    -->
+    <UseAppHost>false</UseAppHost>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>SensorSimulator</RootNamespace>
+  </PropertyGroup>
+
+</Project>

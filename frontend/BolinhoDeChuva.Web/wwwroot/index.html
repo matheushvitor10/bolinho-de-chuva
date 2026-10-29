@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bolinho de Chuva — Sistema de Prevenção de Alagamentos</title>
+<meta name="description" content="Alertas de alagamento, notícias de chuva e clima ao vivo de Ribeirão Preto e região.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" rel="stylesheet">
+<link rel="icon" href="img/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" href="img/favicon.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<a class="pular" href="#conteudo">Pular para o conteúdo</a>
+
+<!-- Aviso quando a API não responde (ajuda muito durante o desenvolvimento) -->
+<div id="aviso-api" class="aviso-api" hidden>
+  Não consegui falar com a API em <code id="aviso-api-url"></code>. Confira se o projeto
+  <strong>BolinhoDeChuva.Api</strong> está rodando.
+</div>
+
+<!-- Barra de alerta -->
+<div id="alert-bar" class="alert-bar" hidden role="alert">
+  <strong class="alert-bar-tag">Alerta</strong>
+  <span id="alert-bar-text"></span>
+  <button id="alert-bar-fechar" class="alert-bar-fechar" aria-label="Fechar o aviso">&times;</button>
+</div>
+
+<!-- Cabeçalho -->
+<header class="masthead">
+  <div class="masthead-row">
+    <a class="brand" href="#" data-ir-para="inicio">
+      <img src="img/emblema.png" alt="" class="brand-logo" width="52" height="52">
+      <span class="brand-text">
+        <span class="brand-name"><span class="brand-bolinho">Bolinho de</span> <span class="brand-chuva">Chuva</span></span>
+        <span class="brand-sub">Sistema de Prevenção de Alagamentos</span>
+      </span>
+    </a>
+
+    <div class="weather-chip" id="weather-chip">
+      <span class="weather-temp">—°</span>
+      <span class="weather-cond">Carregando clima…</span>
+    </div>
+
+    <button id="bell-btn" class="bell-btn" aria-label="Notificações" aria-expanded="false" aria-controls="notif-panel">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 4 1.5 5.5 2 6.5H4c.5-1 2-2.5 2-6.5Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
+      <span id="bell-count" class="bell-count" hidden>0</span>
+    </button>
+  </div>
+
+  <nav class="tabs" aria-label="Seções do site">
+    <button class="tab-btn active" data-tab="inicio">Início</button>
+    <button class="tab-btn" data-tab="alagamentos">Alagamentos</button>
+    <button class="tab-btn" data-tab="sensor">Sensor</button>
+    <button class="tab-btn" data-tab="clima">Clima</button>
+    <button class="tab-btn" data-tab="riscos">Riscos</button>
+    <button class="tab-btn" data-tab="cuidados">Cuidados</button>
+    <button class="tab-btn" data-tab="ajuda">Ajuda</button>
+    <button class="tab-btn tab-bolin" data-tab="bolin">
+      <img src="img/bolin-avatar.png" alt="" width="22" height="22"> Conheça o Bolin
+    </button>
+  </nav>
+</header>
+
+<!-- Painel de notificações -->
+<div id="notif-panel" class="notif-panel" hidden>
+  <div class="notif-panel-header">
+    <span>Notificações</span>
+    <button id="notif-close" aria-label="Fechar notificações">&times;</button>
+  </div>
+  <div id="notif-list" class="notif-list">
+    <p class="notif-empty">Nenhuma região em alerta agora.</p>
+  </div>
+  <p id="notif-permissao" class="notif-permissao"></p>
+  <a href="#alerta-email" id="notif-link-email" class="notif-link-email">Receber os alertas também por email</a>
+</div>
+
+<main id="conteudo">
+
+  <!-- ===================== ABA: Início ===================== -->
+  <section id="tab-inicio" class="tab-panel active">
+
+    <div class="hero">
+      <div class="hero-chuva" aria-hidden="true"></div>
+      <div class="wrap hero-conteudo">
+        <img src="img/bolin-corpo.png" alt="O Bolin, mascote do Bolinho de Chuva, de capa de chuva azul, acenando" class="hero-bolin" width="680" height="640">
+        <div class="hero-texto">
+          <h1>Como está a chuva em Ribeirão Preto</h1>
+          <p class="balao" id="balao-bolin" aria-live="polite">Deixa eu dar uma olhada no céu e nos córregos…</p>
+          <ul class="hero-resumo" id="hero-resumo">
+            <li><span class="hr-valor" id="hr-chuva">—</span><span class="hr-rotulo">de chuva prevista hoje</span></li>
+            <li><span class="hr-valor" id="hr-chance">—</span><span class="hr-rotulo">de chance de chover</span></li>
+            <li><span class="hr-valor" id="hr-zonas">—</span><span class="hr-rotulo">regiões em alerta</span></li>
+          </ul>
+        </div>
+      </div>
+      <svg class="hero-onda" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 40 C 180 90, 360 0, 560 38 S 940 86, 1140 34 S 1360 20, 1440 44 V90 H0 Z" class="onda-meio"/>
+        <path class="onda-fundo" d="M0 58 C 220 20, 420 96, 660 56 S 1060 18, 1260 60 S 1400 70, 1440 58 V90 H0 Z"/>
+      </svg>
+    </div>
+
+    <div class="wrap">
+      <section class="alerta-email" id="alerta-email" aria-labelledby="titulo-alerta-email">
+        <img src="img/bolin-avatar.png" alt="" class="alerta-email-bolin" width="96" height="96">
+        <div class="alerta-email-conteudo">
+          <h2 id="titulo-alerta-email">Receba alertas de temporal no seu email</h2>
+          <p>O Bolin avisa quando um temporal estiver chegando ou quando alguma região entrar em perigo de alagamento. Ele só escreve quando é importante, e você pode cancelar quando quiser.</p>
+          <form id="form-email" class="form-email" novalidate>
+            <label for="campo-email" class="visualmente-oculto">Seu email</label>
+            <input id="campo-email" name="email" type="email" inputmode="email" autocomplete="email"
+                   placeholder="seuemail@gmail.com" required maxlength="254" aria-describedby="email-retorno">
+            <button type="submit" id="botao-email" class="botao-principal">Quero receber alertas</button>
+          </form>
+          <div id="email-retorno" class="email-retorno" role="status" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <div class="section-head">
+        <h2>Notícias de chuva e alagamento</h2>
+        <p class="section-lead">Só o que fala de chuva, temporal, enchente e alagamento. Clique numa notícia para ler no site de origem.</p>
+      </div>
+
+      <div class="filtro-noticias" role="group" aria-label="Em qual cidade você está?">
+        <span class="filtro-rotulo">Sua cidade:</span>
+        <button class="filtro-btn active" data-abrangencia="ribeirao-preto" aria-pressed="true">Ribeirão Preto <span class="filtro-n" id="n-ribeirao-preto"></span></button>
+        <button class="filtro-btn" data-abrangencia="franca" aria-pressed="false">Franca <span class="filtro-n" id="n-franca"></span></button>
+        <button class="filtro-btn" data-abrangencia="nacional" aria-pressed="false">Todo o Brasil <span class="filtro-n" id="n-nacional"></span></button>
+      </div>
+
+      <div id="news-grid" class="news-grid">
+        <p class="loading">Procurando notícias de chuva…</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== ABA: Alagamentos ===================== -->
+  <section id="tab-alagamentos" class="tab-panel">
+    <div class="wrap">
+      <div class="section-head">
+        <h1>Onde está alagando agora</h1>
+        <p class="section-lead">Cada círculo é uma região monitorada. Clique num círculo para ver os detalhes.</p>
+      </div>
+      <p class="nota-simulado">
+        As regiões da cidade ainda usam <strong>dados de demonstração</strong>. Quando um sensor for instalado
+        numa região, ela passa a mostrar a etiqueta “sensor”.
+      </p>
+      <div class="legenda" aria-label="Legenda do mapa">
+        <span><i class="ponto tranquilo"></i>Tranquilo</span>
+        <span><i class="ponto atencao"></i>Atenção</span>
+        <span><i class="ponto perigo"></i>Perigo</span>
+      </div>
+      <div class="map-wrapper">
+        <div id="flood-map" role="region" aria-label="Mapa das regiões monitoradas"></div>
+      </div>
+      <div id="zones-list" class="zones-list">
+        <p class="loading">Carregando regiões…</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== ABA: Sensor ===================== -->
+  <section id="tab-sensor" class="tab-panel">
+    <div class="wrap">
+      <div class="section-head">
+        <h1>Sensor de nível da maquete</h1>
+        <p class="section-lead">Um sensor ultrassônico mede a altura da água na maquete e manda a leitura para o site a cada poucos segundos.</p>
+      </div>
+
+      <div class="sensor-layout">
+        <div class="tanque-card">
+          <div class="tanque" id="tanque" role="img" aria-label="Nível da água na maquete">
+            <div class="tanque-agua" id="tanque-agua"></div>
+            <div class="tanque-linha perigo" id="linha-perigo"><span>Perigo</span></div>
+            <div class="tanque-linha atencao" id="linha-atencao"><span>Atenção</span></div>
+          </div>
+          <div class="tanque-nivel"><span id="sensor-nivel">— cm</span> de água</div>
+        </div>
+
+        <div class="sensor-info">
+          <div class="sensor-estado" id="sensor-estado" data-estado="aguardando">
+            <span class="sensor-luz" aria-hidden="true"></span>
+            <div>
+              <strong id="sensor-estado-titulo">Aguardando o sensor</strong>
+              <p id="sensor-estado-texto">O sensor ainda não mandou nenhuma leitura. Assim que ele for ligado, esta página começa a se mexer sozinha.</p>
+            </div>
+          </div>
+
+          <dl class="sensor-dados">
+            <div><dt>Situação</dt><dd id="sensor-status">—</dd></div>
+            <div><dt>Distância medida</dt><dd id="sensor-distancia">—</dd></div>
+            <div><dt>Última leitura</dt><dd id="sensor-ultima">—</dd></div>
+            <div><dt>Leituras recebidas</dt><dd id="sensor-total">0</dd></div>
+          </dl>
+
+          <div class="grafico-card">
+            <h3>Nível nas últimas leituras</h3>
+            <div id="sensor-grafico" class="sensor-grafico">
+              <p class="loading">O gráfico aparece quando chegarem as primeiras leituras.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <section class="simulacao" id="simulacao" aria-labelledby="titulo-simulacao" hidden>
+        <div class="simulacao-topo">
+          <div>
+            <h2 id="titulo-simulacao">Simular a água na maquete</h2>
+            <p>Enquanto o sensor não está ligado, use os botões para mudar o nível da água. Funciona igual ao sensor de verdade: o tanque, o gráfico, os alertas e os emails reagem na hora.</p>
+          </div>
+        </div>
+
+        <div class="simulacao-grupos">
+          <div class="sim-grupo">
+            <h3>Altura da água</h3>
+            <div class="sim-altura">
+              <button class="sim-btn" data-variacao="-1" aria-label="Baixar 1 centímetro">−1 cm</button>
+              <output id="sim-valor" class="sim-valor" for="sim-slider">0 cm</output>
+              <button class="sim-btn" data-variacao="1" aria-label="Subir 1 centímetro">+1 cm</button>
+            </div>
+            <input type="range" id="sim-slider" class="sim-slider" min="0" max="25" step="0.5" value="0" aria-label="Altura da água em centímetros">
+            <div class="sim-atalhos">
+              <button class="sim-atalho" data-nivel="0">Seca</button>
+              <button class="sim-atalho" data-nivel="6">Normal</button>
+              <button class="sim-atalho atencao" data-nivel="14">Atenção</button>
+              <button class="sim-atalho perigo" data-nivel="20">Perigo</button>
+            </div>
+          </div>
+
+          <div class="sim-grupo">
+            <h3>Água chegando</h3>
+            <p class="sim-ajuda">Escolha quanta chuva está caindo: a água sobe sozinha a cada 2 segundos.</p>
+            <div class="sim-chuva" role="group" aria-label="Intensidade da chuva">
+              <button class="sim-chuva-btn" data-taxa="0.5" aria-pressed="false">Chuva fraca<span>+0,5 cm</span></button>
+              <button class="sim-chuva-btn" data-taxa="1.5" aria-pressed="false">Chuva forte<span>+1,5 cm</span></button>
+              <button class="sim-chuva-btn" data-taxa="3" aria-pressed="false">Temporal<span>+3 cm</span></button>
+              <button class="sim-chuva-btn escoar" data-taxa="-1.5" aria-pressed="false">Escoar<span>−1,5 cm</span></button>
+            </div>
+            <button id="sim-parar" class="sim-parar" disabled>Parar</button>
+          </div>
+        </div>
+        <p id="sim-erro" class="sim-erro" role="alert"></p>
+      </section>
+
+      <h2 class="subsection-title">Como o sensor funciona</h2>
+      <ol class="passos">
+        <li><strong>O sensor mede.</strong> Preso acima da água e virado para baixo, ele mede a distância até a superfície usando ultrassom.</li>
+        <li><strong>O ESP32 envia.</strong> A placa ESP32 manda essa distância pela internet (Wi-Fi) para a API do Bolinho de Chuva.</li>
+        <li><strong>A API calcula.</strong> Nível da água = altura onde o sensor está − distância medida. Com o nível, ela decide se está tranquilo, em atenção ou em perigo.</li>
+        <li><strong>O site avisa.</strong> Esta página, o mapa e o sininho de notificações se atualizam sozinhos.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ===================== ABA: Clima ===================== -->
+  <section id="tab-clima" class="tab-panel">
+    <div class="wrap">
+      <div class="section-head">
+        <h1>Clima em Ribeirão Preto</h1>
+        <p class="section-lead">Dados meteorológicos ao vivo, atualizados a cada 5 minutos.</p>
+      </div>
+      <div id="weather-detail" class="weather-detail">
+        <p class="loading">Carregando dados do clima…</p>
+      </div>
+      <h2 class="subsection-title">Chuva nos próximos dias</h2>
+      <div id="weather-dias" class="weather-dias"></div>
+    </div>
+  </section>
+
+  <!-- ===================== ABA: Riscos ===================== -->
+  <section id="tab-riscos" class="tab-panel">
+    <div class="wrap">
+      <div class="section-head">
+        <h1>Por que é perigoso sair durante um alagamento</h1>
+        <p class="section-lead">15 cm de água em movimento já derrubam um adulto. Veja como cada risco acontece na prática.</p>
+      </div>
+
+      <div class="risk-grid">
+        <article class="risk-card">
+          <h3>Força da água</h3>
+          <p>15 cm de água em movimento derrubam uma pessoa; 50 cm arrastam um carro. A correnteza engana — parece pouco, mas basta um desequilíbrio para cair.</p>
+        </article>
+        <article class="risk-card">
+          <h3>Água contaminada</h3>
+          <p>A água do alagamento se mistura com esgoto e lixo e é a principal via de contágio da leptospirose. Um pequeno corte na pele já vira porta de entrada.</p>
+        </article>
+        <article class="risk-card">
+          <h3>Choque elétrico</h3>
+          <p>Fios submersos podem eletrificar a água ao redor, sem nenhum sinal visível. A água conduz eletricidade muito bem.</p>
+        </article>
+        <article class="risk-card">
+          <h3>Buracos escondidos</h3>
+          <p>Bueiros abertos e valas ficam escondidos debaixo da água turva. É comum alguém cair num buraco que não sabia que estava ali.</p>
+        </article>
+        <article class="risk-card">
+          <h3>Animais peçonhentos</h3>
+          <p>A cheia expulsa cobras, escorpiões e aranhas dos seus esconderijos, e eles procuram áreas secas por perto — inclusive casas.</p>
+        </article>
+        <article class="risk-card">
+          <h3>Desabamento</h3>
+          <p>O solo encharcado perde firmeza, e isso aumenta o risco de queda de muros, encostas e paredes de casas mais antigas.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== ABA: Cuidados ===================== -->
+  <section id="tab-cuidados" class="tab-panel">
+    <div class="wrap">
+      <div class="section-head">
+        <h1>Cuidados antes, durante e depois</h1>
+        <p class="section-lead">A prevenção reduz o risco em cada etapa do alagamento.</p>
+      </div>
+
+      <div class="care-pills" role="tablist" aria-label="Etapas">
+        <button class="care-pill-btn active" data-care="antes" role="tab" aria-selected="true">Antes</button>
+        <button class="care-pill-btn" data-care="durante" role="tab" aria-selected="false">Durante</button>
+        <button class="care-pill-btn" data-care="depois" role="tab" aria-selected="false">Depois</button>
+      </div>
+
+      <div id="care-antes" class="care-panel active">
+        <div class="tip-grid">
+          <div class="tip-card"><strong>Receba alertas no celular</strong><p>Mande seu CEP por SMS para <b>40199</b> e a Defesa Civil avisa quando houver risco de chuva forte. É gratuito.</p></div>
+          <div class="tip-card"><strong>Eleve o que for possível</strong><p>Guarde documentos e aparelhos elétricos em lugares altos.</p></div>
+          <div class="tip-card"><strong>Monte um kit de emergência</strong><p>Água, lanterna, remédios e documentos dentro de um saco plástico.</p></div>
+          <div class="tip-card"><strong>Planeje uma rota de saída</strong><p>Saiba para onde ir e combine um ponto de encontro com a família — e não esqueça dos animais de estimação.</p></div>
+        </div>
+      </div>
+
+      <div id="care-durante" class="care-panel">
+        <div class="tip-grid">
+          <div class="tip-card"><strong>Não atravesse a água</strong><p>Nem a pé, nem de carro — a profundidade e a correnteza enganam.</p></div>
+          <div class="tip-card"><strong>Desligue a energia elétrica</strong><p>Corte a chave geral se a água começar a entrar em casa.</p></div>
+          <div class="tip-card"><strong>Busque um ponto mais alto</strong><p>Suba para andares superiores e aguarde o resgate em segurança.</p></div>
+          <div class="tip-card"><strong>Não vá ver de perto</strong><p>Ir até a área alagada por curiosidade ocupa as vias e coloca você em risco.</p></div>
+        </div>
+      </div>
+
+      <div id="care-depois" class="care-panel">
+        <div class="tip-grid">
+          <div class="tip-card"><strong>Use luvas e botas</strong><p>Evite contato direto da pele com a lama e a água do alagamento.</p></div>
+          <div class="tip-card"><strong>Descarte alimentos que molharam</strong><p>Jogue fora tudo o que teve contato com a água do alagamento.</p></div>
+          <div class="tip-card"><strong>Procure atendimento se tiver febre</strong><p>Pode ser leptospirose. Vá a um posto de saúde e conte que teve contato com a água.</p></div>
+          <div class="tip-card"><strong>Confira a casa antes de voltar</strong><p>Só volte a usar a casa depois de checar a parte elétrica e o encanamento.</p></div>
+        </div>
+      </div>
+
+      <aside class="bolin-lembra">
+        <img src="img/bolin-avatar.png" alt="" width="56" height="56">
+        <p><strong>O Bolin lembra:</strong> lixo na rua entope bueiro, e bueiro entupido vira alagamento. Lixo é no lixo!</p>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ===================== ABA: Ajuda ===================== -->
+  <section id="tab-ajuda" class="tab-panel">
+    <div class="wrap">
+      <div class="section-head">
+        <h1>Ajuda e contatos de emergência</h1>
+        <p class="section-lead">Salve esses números. As ligações de emergência são gratuitas. No celular, toque no número para ligar.</p>
+      </div>
+      <div id="contacts-grid" class="contacts-grid">
+        <p class="loading">Carregando contatos…</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== ABA: Conheça o Bolin ===================== -->
+  <section id="tab-bolin" class="tab-panel">
+    <div class="wrap">
+      <div class="bolin-apresentacao">
+        <figure class="bolin-figura">
+          <img src="img/bolin-corpo.png" alt="O Bolin: um bolinho de chuva sorridente, de capa de chuva azul com gotinhas, galochas azuis e um guarda-chuva fechado na mão, acenando." width="680" height="640">
+        </figure>
+        <div class="bolin-texto">
+          <h1>Conheça o Bolin</h1>
+          <p class="bolin-intro">O Bolin é o mascote do Bolinho de Chuva. O nome vem daquele bolinho que todo mundo come em dia de chuva — e foi daí que veio a ideia: um sistema que avisa quando a chuva deixa de ser só um bom motivo para fritar bolinho e vira risco de alagamento.</p>
+          <p>Ele está sempre pronto para o tempo virar: capa de chuva azul, galochas nos pés e o guarda-chuva na mão, fechado, só esperando a primeira gota. E vive acenando — é o jeito dele de dizer que está de olho nos córregos de Ribeirão Preto e que você pode contar com ele.</p>
+
+          <h2 class="subsection-title">O que o Bolin faz por aqui</h2>
+          <ul class="bolin-faz">
+            <li><strong>Resume a situação.</strong> Na página inicial, ele conta em uma frase como está o tempo e se alguma região está em alerta.</li>
+            <li><strong>Avisa quando a água sobe.</strong> A barra vermelha no topo e o sininho de notificações são o jeito dele chamar a sua atenção.</li>
+            <li><strong>Dá dicas.</strong> O que fazer antes, durante e depois de um alagamento.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="dica-bolin">
+        <img src="img/bolin-avatar.png" alt="" width="88" height="88">
+        <div>
+          <h2>Dica do Bolin</h2>
+          <p id="dica-texto" aria-live="polite"></p>
+          <button id="dica-proxima" class="botao">Outra dica</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <img src="img/emblema.png" alt="" width="40" height="40">
+  <p><strong>Bolinho de Chuva</strong> — Sistema de Prevenção de Alagamentos<br>
+  Projeto Integrador Interdisciplinar (PINT2), Ribeirão Preto, SP<br>
+  <a href="config.html" id="link-config" class="link-config" hidden>Configurar emails</a></p>
+</footer>
+
+<!-- ===================== Bolin assistente =====================
+     Aparece ao entrar no sistema contando como está o tempo, sai depois de
+     30 segundos e fica espiando no canto. Clicando nele, abre as perguntas. -->
+<div id="bolin-assistente" class="bolin-assistente" data-estado="escondido">
+  <div id="bolin-balao" class="bolin-balao" role="region" aria-label="Mensagem do Bolin" hidden>
+    <button id="bolin-fechar" class="bolin-fechar" aria-label="Fechar a mensagem do Bolin">&times;</button>
+    <div id="bolin-conteudo" class="bolin-conteudo" aria-live="polite"></div>
+    <div class="bolin-tempo" aria-hidden="true"><i id="bolin-tempo-barra"></i></div>
+  </div>
+  <span class="bolin-chamada" aria-hidden="true">Clique em mim!</span>
+  <button id="bolin-personagem" class="bolin-personagem" aria-label="Conversar com o Bolin" aria-expanded="false" aria-controls="bolin-balao">
+    <span class="bolin-corpo"><img src="img/bolin-corpo.png" alt="" width="680" height="640"></span>
+  </button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
