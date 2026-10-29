@@ -1,0 +1,45 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "backend", "backend", "{6549498A-4C3E-44B6-B913-D7EF48A20EB4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BolinhoDeChuva.Api", "backend\BolinhoDeChuva.Api\BolinhoDeChuva.Api.csproj", "{BE814D57-8C31-4CA1-BD5D-AD9079CD0F0C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "frontend", "frontend", "{2C723882-4B32-410A-A6CE-E61925B56842}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BolinhoDeChuva.Web", "frontend\BolinhoDeChuva.Web\BolinhoDeChuva.Web.csproj", "{0F7D8DA6-D315-4909-B68B-25AF40457DDE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sensor", "sensor", "{1796AD97-C8EF-4DE6-BD19-C1A16E6A8167}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SensorSimulator", "sensor\SensorSimulator\SensorSimulator.csproj", "{D3BE8497-677C-4C8E-BB9E-C9BF7FD5BFDD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BE814D57-8C31-4CA1-BD5D-AD9079CD0F0C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BE814D57-8C31-4CA1-BD5D-AD9079CD0F0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BE814D57-8C31-4CA1-BD5D-AD9079CD0F0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BE814D57-8C31-4CA1-BD5D-AD9079CD0F0C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0F7D8DA6-D315-4909-B68B-25AF40457DDE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F7D8DA6-D315-4909-B68B-25AF40457DDE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0F7D8DA6-D315-4909-B68B-25AF40457DDE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0F7D8DA6-D315-4909-B68B-25AF40457DDE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D3BE8497-677C-4C8E-BB9E-C9BF7FD5BFDD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D3BE8497-677C-4C8E-BB9E-C9BF7FD5BFDD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D3BE8497-677C-4C8E-BB9E-C9BF7FD5BFDD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D3BE8497-677C-4C8E-BB9E-C9BF7FD5BFDD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{BE814D57-8C31-4CA1-BD5D-AD9079CD0F0C} = {6549498A-4C3E-44B6-B913-D7EF48A20EB4}
+		{0F7D8DA6-D315-4909-B68B-25AF40457DDE} = {2C723882-4B32-410A-A6CE-E61925B56842}
+		{D3BE8497-677C-4C8E-BB9E-C9BF7FD5BFDD} = {1796AD97-C8EF-4DE6-BD19-C1A16E6A8167}
+	EndGlobalSection
+EndGlobal

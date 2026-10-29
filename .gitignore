@@ -1,0 +1,21 @@
+# .NET instalado pelo "npm install" (cada um instala o seu)
+.dotnet/
+
+# Node
+node_modules/
+
+# Visual Studio / .NET
+.vs/
+bin/
+obj/
+*.user
+*.suo
+*.log
+.DS_Store
+
+# Bolinho de Chuva: senhas e dados gerados pela API
+appsettings.Local.json
+backend/BolinhoDeChuva.Api/dados/
+backend/BolinhoDeChuva.Api/emails-de-teste/
+
+# .NET instalado localmente e pacotes do Node

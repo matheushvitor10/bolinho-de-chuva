@@ -1,0 +1,51 @@
+[
+  {
+    "Name": "Bolinho de Chuva (API + Site)",
+    "Projects": [
+      {
+        "Path": "backend\\BolinhoDeChuva.Api\\BolinhoDeChuva.Api.csproj",
+        "Action": "Start",
+        "DebugTarget": "API-local"
+      },
+      {
+        "Path": "frontend\\BolinhoDeChuva.Web\\BolinhoDeChuva.Web.csproj",
+        "Action": "Start",
+        "DebugTarget": "Site"
+      }
+    ]
+  },
+  {
+    "Name": "Bolinho de Chuva (API + Site + Simulador)",
+    "Projects": [
+      {
+        "Path": "backend\\BolinhoDeChuva.Api\\BolinhoDeChuva.Api.csproj",
+        "Action": "Start",
+        "DebugTarget": "API-local"
+      },
+      {
+        "Path": "frontend\\BolinhoDeChuva.Web\\BolinhoDeChuva.Web.csproj",
+        "Action": "Start",
+        "DebugTarget": "Site"
+      },
+      {
+        "Path": "sensor\\SensorSimulator\\SensorSimulator.csproj",
+        "Action": "Start"
+      }
+    ]
+  },
+  {
+    "Name": "Bolinho de Chuva (API na rede para o ESP32 + Site)",
+    "Projects": [
+      {
+        "Path": "backend\\BolinhoDeChuva.Api\\BolinhoDeChuva.Api.csproj",
+        "Action": "Start",
+        "DebugTarget": "API-rede"
+      },
+      {
+        "Path": "frontend\\BolinhoDeChuva.Web\\BolinhoDeChuva.Web.csproj",
+        "Action": "Start",
+        "DebugTarget": "Site"
+      }
+    ]
+  }
+]

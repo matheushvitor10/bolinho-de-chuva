@@ -1,0 +1,22 @@
+# ============================================================================
+# Bolinho de Chuva — configuração da hospedagem no Render (plano gratuito)
+# No Render: New → Blueprint → escolha este repositório. Ele lê este arquivo.
+# ============================================================================
+services:
+  - type: web
+    name: bolinho-de-chuva
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/status
+    autoDeploy: true
+    envVars:
+      # Os dois valores abaixo são os do Google (emails + planilha de inscritos).
+      # O Render vai pedir eles na hora de criar. Copie do arquivo
+      # backend/BolinhoDeChuva.Api/appsettings.Local.json do seu computador:
+      #   Google:UrlScript → Google__UrlScript
+      #   Google:Chave     → Google__Chave
+      - key: Google__UrlScript
+        sync: false
+      - key: Google__Chave
+        sync: false

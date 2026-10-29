@@ -1,0 +1,18 @@
+{
+  "name": "bolinho-de-chuva",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Bolinho de Chuva — SPA (Sistema de Prevenção de Alagamentos) de Ribeirão Preto e região (PINT2)",
+  "scripts": {
+    "postinstall": "node scripts/instalar.js",
+    "start": "node scripts/iniciar.js",
+    "rede": "node scripts/iniciar.js --rede",
+    "simulador": "node scripts/simulador.js",
+    "teste-email": "node scripts/teste-email.js",
+    "teste-temporal": "node scripts/teste-alerta.js temporal",
+    "teste-alagamento": "node scripts/teste-alerta.js zona"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

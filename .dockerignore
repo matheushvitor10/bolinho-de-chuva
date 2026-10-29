@@ -1,0 +1,10 @@
+# Coisas que NÃO vão para a hospedagem (arquivos gerados e senhas deste computador)
+**/bin/
+**/obj/
+.dotnet/
+node_modules/
+.vs/
+**/appsettings.Local.json
+**/dados/
+**/emails-de-teste/
+sensor/
