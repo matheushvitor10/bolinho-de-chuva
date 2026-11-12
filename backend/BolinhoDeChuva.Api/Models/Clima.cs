@@ -13,7 +13,10 @@ public record ClimaAtual(
     int CodigoCondicao,
     bool EstaChovendo,
     PrevisaoDia PrevisaoHoje,
-    IReadOnlyList<PrevisaoDia> ProximosDias);
+    IReadOnlyList<PrevisaoDia> ProximosDias,
+    // true quando a Open-Meteo não respondeu e estamos mostrando o último clima que deu certo
+    bool Desatualizado = false,
+    DateTimeOffset? ObtidoEm = null);
 
 public record PrevisaoDia(
     string Data,

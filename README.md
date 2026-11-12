@@ -168,7 +168,9 @@ bolinho-de-chuva/
 │       ├── config.html               → página de configuração dos emails
 │       ├── css/style.css
 │       ├── js/config.js              → ONDE ESTÁ A API (único lugar pra trocar)
-│       ├── js/app.js
+│       ├── js/app.js                 → o site em JavaScript comum
+│       ├── js/vue-paineis.js         → as partes em Vue.js (aba Sensor e lista de regiões)
+│       ├── js/vendor/                → cópia do Vue.js 3
 │       └── img/                      → logo, emblema, Bolin e favicon
 │
 └── sensor/
@@ -176,6 +178,59 @@ bolinho-de-chuva/
     ├── esp32/MAQUETE.md              → como montar e ligar o sensor
     └── SensorSimulator/              → simulador em C#
 ```
+
+---
+
+## Vue.js no projeto (Options API)
+
+Duas partes do site são feitas em **Vue.js 3**, com a **Options API**. Todo o código
+delas fica em `frontend/BolinhoDeChuva.Web/wwwroot/js/vue-paineis.js`, bem comentado.
+O Vue fica numa cópia dentro do projeto (`js/vendor/vue.global.prod.js`), então o site
+não depende de nenhum site externo para carregar ele.
+
+| Onde | O que o Vue faz | Partes do Vue usadas |
+| --- | --- | --- |
+| Aba **Sensor** | Busca a leitura na API a cada 3 segundos e atualiza o tanque, o gráfico, a situação e a simulação **sem recarregar a página**. Com a aba fechada, para de consultar. | `data`, `computed`, `methods`, `watch`, `mounted` + `setInterval` |
+| Aba **Alagamentos** | Lista de regiões com **busca por nome** e **filtro por situação** (Perigo, Atenção, Tranquilo), feitos no navegador, sem nova consulta à API. | `data`, `computed`, `v-model`, `v-for`, `v-if`, `@click` |
+| Cartão de cada região | Um **componente** (`CartaoRegiao`) escrito uma vez e reutilizado para cada região, recebendo os dados por **props**. | `props`, componente |
+| **Histórico de alertas** (aba Alagamentos) | Lista de alertas com filtro **por local** e **"só alertas ativos"**, atualizada a cada 10 segundos enquanto a aba está aberta. Cada alerta é o componente `ItemAlerta`. | `data`, `computed`, `v-model` (select e checkbox), `props` |
+| **Barra de pesquisa** (topo) | Mostra os resultados **enquanto a pessoa digita**: abas, regiões, notícias, riscos, cuidados, telefones e perguntas do Bolin. Setas e Enter funcionam, e a tecla **/** vai direto para a busca. | `computed`, `watch`, `methods`, `$refs`, `mounted` |
+
+Como funciona, em uma frase: os dados ficam em `data()`, o HTML (o `template`) diz onde
+cada dado aparece, e quando um dado muda o Vue atualiza a tela sozinho. Por exemplo,
+quando chega uma leitura nova do sensor, o método `buscar()` só faz
+`this.status = resposta`, e o tanque, os números e o gráfico mudam na hora.
+
+O restante do site continua em JavaScript comum (`js/app.js`). Os dois conversam por
+dois "ganchos": o `app.js` entrega as regiões com `painelRegioes.receber(zonas)` e
+avisa a troca de aba com `painelSensor.definirAtivo(true/false)`.
+
+---
+
+## Pesquisa, histórico de alertas e alerta de chuva
+
+**Barra de pesquisa (topo do site).** Digite qualquer palavra e os resultados aparecem
+na hora, sem consultar a API: "199" leva aos telefones, "leptospirose" ao risco certo,
+"zara" filtra a região no mapa, "Franca" acha as notícias, "kit" abre os cuidados, e
+"onde foi criado" abre o Bolin com a resposta. Use as setas e Enter, ou clique. Para
+acrescentar palavras, edite a lista `ABAS_DA_BUSCA` em `js/vue-paineis.js`.
+
+**Histórico de alertas (aba Alagamentos).** Toda vez que uma região entra em atenção ou
+perigo, ou que começa a chover forte, um alerta é aberto. Ele fica **ativo** até a
+situação voltar ao normal e depois aparece como **encerrado**, com quanto tempo durou.
+Dá para filtrar por local e ver só os ativos. (O histórico fica na memória da API: ao
+reiniciar, ele recomeça com as regiões que já estão em alerta.)
+
+**Email de "começou a chover".** A API confere o clima da Open-Meteo **a cada 10
+minutos**. Quando começa a chover de verdade em Ribeirão Preto (chuva, pancadas ou
+trovoada; garoa fraca não conta), quem está inscrito recebe o email **"Começou a chover"**.
+Para não lotar a caixa de entrada, ele sai **no máximo a cada 6 horas**. Se no mesmo
+momento também houver temporal, sai só o email de temporal, que é o mais grave. Na
+página de configuração há o botão **"Enviar alerta de chuva"** para testar.
+
+**Se a internet cair** e a Open-Meteo não responder, o site continua mostrando o último
+clima que deu certo, com o aviso "sem atualização", e nenhum alerta é disparado com dado
+velho. A página de configuração mostra se o clima está funcionando.
 
 ---
 
@@ -187,6 +242,7 @@ bolinho-de-chuva/
 | `GET /api/noticias?abrangencia=ribeirao-preto\|franca\|nacional\|todas` | Notícias **só de chuva e alagamento**, por cidade |
 | `GET /api/clima` | Clima ao vivo de Ribeirão Preto e previsão de chuva para os próximos dias |
 | `GET /api/enchentes` | Situação de todas as regiões monitoradas |
+| `GET /api/alertas` | Histórico de alertas (alagamento, chuva e temporal), ativos e encerrados |
 | `GET /api/enchentes/{id}` | Uma região específica |
 | `GET /api/contatos` | Telefones de emergência |
 | `GET /api/sensor/status?zonaId=maquete-demo` | Situação do sensor (conectado, última leitura, histórico) |
@@ -318,6 +374,8 @@ Quando alguém se cadastra:
 3. A partir daí, a pessoa recebe **alertas automáticos**:
    - **Temporal** — quando a previsão do tempo indicar trovoada agora, trovoada
      prevista para hoje, ou chuva forte (30 mm ou mais). No máximo um por dia.
+   - **Chuva** — quando começa a chover de verdade em Ribeirão Preto. No máximo um a
+     cada 6 horas.
    - **Alagamento** — quando uma região entrar em nível de **perigo**, inclusive a
      **maquete**: encheu a maquete na apresentação, o email chega. 😉 No máximo um
      a cada 30 minutos por região.
@@ -416,7 +474,7 @@ em 18 cm: o alerta de alagamento da maquete é enviado sozinho.
 | Limites de atenção/perigo de cada região | `backend/BolinhoDeChuva.Api/Data/ZonasIniciais.cs` |
 | Ligar o envio de emails (Google) | página **http://localhost:5500/config.html** |
 | Gmail usado na opção "senha de app" | `backend/BolinhoDeChuva.Api/appsettings.json` → `Email:Usuario` |
-| Quando mandar alerta de temporal (mm de chuva, chance de trovoada) | `appsettings.json` → `Alertas` |
+| Quando mandar alerta de temporal e de chuva (mm, chance de trovoada, horas entre avisos de chuva) | `appsettings.json` → `Alertas` |
 | Links que vão nos emails (endereço do site e da API) | `appsettings.json` → `Site` |
 
 A **chave do sensor** fica vazia enquanto vocês testam. Quando o site for publicado,

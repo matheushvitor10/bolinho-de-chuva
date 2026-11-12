@@ -12,13 +12,19 @@ namespace BolinhoDeChuva.Api.Services;
 ///    - A maquete só conta quando estiver recebendo leituras (sensor ou simulação).
 ///    - No máximo um alerta por região a cada X minutos (Alertas:MinutosEntreAlertasDaMesmaZona).
 ///
-/// 2. Temporal (a cada 15 minutos): pela previsão do tempo, quando houver
-///    trovoada agora, previsão de trovoada hoje, ou chuva forte prevista.
-///    No máximo um alerta de temporal por dia.
+/// 2. Clima (a cada 10 minutos), pela Open-Meteo:
+///    - CHUVA: quando começa a chover de verdade (garoa fraca não conta).
+///      No máximo um email a cada X horas (Alertas:HorasEntreAlertasDeChuva).
+///    - TEMPORAL: trovoada agora, trovoada prevista para hoje ou chuva forte
+///      prevista. No máximo um email de temporal por dia.
+///
+/// Tudo o que acontece também vai para o HISTÓRICO DE ALERTAS (aba Alagamentos),
+/// mesmo quando ninguém está inscrito para receber email.
 /// </summary>
 public class MonitorDeAlertasService(
     ZonasService zonas,
     InscricoesService inscricoes,
+    HistoricoAlertasService historico,
     AlertasService alertas,
     EmailTemplates templates,
     IServiceProvider servicos,
@@ -31,9 +37,19 @@ public class MonitorDeAlertasService(
         TimeSpan.FromMinutes(config.GetValue("Alertas:MinutosEntreAlertasDaMesmaZona", 30));
     private double ChuvaForteMm => config.GetValue("Alertas:ChuvaForteMm", 30.0);
     private int ChanceMinimaDeTrovoada => config.GetValue("Alertas:ChanceMinimaDeTrovoada", 60);
+    private double ChuvaMinimaMm => config.GetValue("Alertas:ChuvaMinimaMm", 0.5);
+    private TimeSpan IntervaloEntreAlertasDeChuva =>
+        TimeSpan.FromHours(config.GetValue("Alertas:HorasEntreAlertasDeChuva", 6.0));
 
-    protected override Task ExecuteAsync(CancellationToken ct) =>
-        Task.WhenAll(VigiarZonasAsync(ct), VigiarTemporalAsync(ct), SincronizarPlanilhaAsync(ct));
+    protected override Task ExecuteAsync(CancellationToken ct)
+    {
+        // Regiões que já começam em atenção ou perigo entram no histórico como
+        // alertas ativos (mas sem email: senão todo mundo receberia a cada reinício).
+        foreach (var zona in zonas.ObterTodas().Where(z => !z.EhMaquete && z.Status != StatusZona.Tranquilo))
+            historico.RegistrarZona(zona);
+
+        return Task.WhenAll(VigiarZonasAsync(ct), VigiarClimaAsync(ct), SincronizarPlanilhaAsync(ct));
+    }
 
     // Ao ligar, junta a lista de inscritos deste computador com a planilha do Google.
     private async Task SincronizarPlanilhaAsync(CancellationToken ct)
@@ -67,6 +83,8 @@ public class MonitorDeAlertasService(
 
     private async Task TratarMudancaAsync(ZonaAlagamento zona, string anterior, CancellationToken ct)
     {
+        historico.RegistrarZona(zona);
+
         var entrouEmPerigo = zona.Status == StatusZona.Perigo && anterior != StatusZona.Perigo;
         if (!entrouEmPerigo) return;
         if (zona.EhMaquete && !StatusZona.RecebeLeituras(zona.Fonte)) return;
@@ -83,31 +101,27 @@ public class MonitorDeAlertasService(
         await alertas.EnviarParaTodosAsync($"perigo em {zona.Nome}", i => templates.AlertaZona(i, zona), ct);
     }
 
-    // Temporal: olha a previsão 30 s depois de ligar e, depois, a cada 15 minutos.
-    private async Task VigiarTemporalAsync(CancellationToken ct)
+    // Clima: olha 30 s depois de ligar e, depois, a cada 10 minutos.
+    private async Task VigiarClimaAsync(CancellationToken ct)
     {
         await Task.Delay(TimeSpan.FromSeconds(30), ct);
-        using var relogio = new PeriodicTimer(TimeSpan.FromMinutes(15));
+        var minutos = Math.Max(0.1, config.GetValue("Alertas:MinutosEntreChecagensDoClima", 10.0));
+        using var relogio = new PeriodicTimer(TimeSpan.FromMinutes(minutos));
         do
         {
             try
             {
-                await ChecarTemporalAsync(ct);
+                await ChecarClimaAsync(ct);
             }
             catch (Exception erro) when (!ct.IsCancellationRequested)
             {
-                logger.LogWarning("Erro ao checar temporal: {Mensagem}", erro.Message);
+                logger.LogWarning("Erro ao checar o clima: {Mensagem}", erro.Message);
             }
         } while (await relogio.WaitForNextTickAsync(ct));
     }
 
-    private async Task ChecarTemporalAsync(CancellationToken ct)
+    public async Task ChecarClimaAsync(CancellationToken ct)
     {
-        if (inscricoes.Listar().Count == 0) return;
-
-        var hoje = DateOnly.FromDateTime(DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(-3)).DateTime);
-        if (inscricoes.UltimoAlertaDeTemporal == hoje) return;
-
         ClimaAtual clima;
         try
         {
@@ -115,15 +129,60 @@ public class MonitorDeAlertasService(
         }
         catch (Exception erro) when (!ct.IsCancellationRequested)
         {
-            logger.LogInformation("Não deu pra checar temporal agora (clima indisponível: {Mensagem}).", erro.Message);
+            logger.LogInformation("Não deu pra checar o clima agora: {Mensagem}", erro.Message);
             return;
         }
 
-        var motivo = MotivoDeTemporal(clima);
-        if (motivo is null) return;
+        // Clima antigo (a Open-Meteo não respondeu): não dispara alerta com dado velho.
+        if (clima.Desatualizado) return;
 
-        inscricoes.MarcarAlertaDeTemporal(hoje);
-        await alertas.EnviarParaTodosAsync("temporal", i => templates.AlertaTemporal(i, motivo, clima), ct);
+        var agora = DateTimeOffset.UtcNow;
+        var hoje = DateOnly.FromDateTime(agora.ToOffset(TimeSpan.FromHours(-3)).DateTime);
+
+        // ---------- Temporal ----------
+        var emailDeTemporalEnviado = false;
+        var motivo = MotivoDeTemporal(clima);
+        if (motivo is null)
+        {
+            historico.FecharClima("temporal");
+        }
+        else
+        {
+            historico.AbrirClima("temporal", StatusZona.Perigo, motivo);
+            if (inscricoes.UltimoAlertaDeTemporal != hoje)
+            {
+                inscricoes.MarcarAlertaDeTemporal(hoje);
+                await alertas.EnviarParaTodosAsync("temporal", i => templates.AlertaTemporal(i, motivo, clima), ct);
+                emailDeTemporalEnviado = true;
+            }
+        }
+
+        // ---------- Chuva ----------
+        var chovendo = ClimaService.EstaChovendoDeVerdade(clima, ChuvaMinimaMm);
+        if (!chovendo)
+        {
+            historico.FecharClima("chuva");
+            return;
+        }
+
+        var comecouAgora = !historico.TemClimaAtivo("chuva");
+        historico.AbrirClima("chuva", StatusZona.Atencao,
+            string.Create(new System.Globalization.CultureInfo("pt-BR"), $"{clima.Condicao}, {clima.PrecipitacaoMm:0.#} mm na última hora"));
+
+        if (!comecouAgora) return;
+
+        var ultimo = inscricoes.UltimoAlertaDeChuva;
+        if (ultimo is not null && agora - ultimo < IntervaloEntreAlertasDeChuva)
+        {
+            logger.LogInformation("Começou a chover, mas já houve aviso de chuva há pouco. Email não reenviado.");
+            return;
+        }
+
+        inscricoes.MarcarAlertaDeChuva(agora);
+        // Se o email de temporal acabou de sair, ele já avisou: não manda dois de uma vez.
+        if (emailDeTemporalEnviado) return;
+
+        await alertas.EnviarParaTodosAsync("chuva", i => templates.AlertaChuva(i, clima), ct);
     }
 
     /// <summary>Devolve o motivo do alerta de temporal, ou null se o tempo estiver tranquilo.</summary>

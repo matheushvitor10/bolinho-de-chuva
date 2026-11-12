@@ -24,7 +24,8 @@ public class ConfigController(
     InscricoesService inscricoes,
     AlertasService alertas,
     EmailTemplates templates,
-    ZonasService zonas) : ControllerBase
+    ZonasService zonas,
+    IServiceProvider servicos) : ControllerBase
 {
     private static readonly Regex UrlDoScript = new(
         @"^(https://script\.google\.com/(macros|a/macros/[^/]+)/s/[A-Za-z0-9_-]+/exec|http://(localhost|127\.0\.0\.1):\d+/.+)$",
@@ -56,8 +57,21 @@ public class ConfigController(
             else erroGoogle = ping.Erro;
         }
 
+        // Clima: confere se a Open-Meteo está respondendo agora.
+        object clima;
+        try
+        {
+            var c = await servicos.GetRequiredService<ClimaService>().ObterAsync(ct);
+            clima = new { ok = !c.Desatualizado, c.Condicao, c.Temperatura, c.EstaChovendo, c.Desatualizado, erro = (string?)null };
+        }
+        catch (Exception erro) when (!ct.IsCancellationRequested)
+        {
+            clima = new { ok = false, condicao = (string?)null, temperatura = (double?)null, estaChovendo = false, desatualizado = false, erro = erro.Message };
+        }
+
         return Ok(new
         {
+            clima,
             metodo = email.Metodo,
             google = new { conectado = google.Configurado, funcionando = google.Configurado && erroGoogle is null, conta, planilha, cotaRestante = cota, erro = erroGoogle },
             smtp = new { usuario = email.UsuarioSmtp, temSenha = email.TemSenhaSmtp },
@@ -127,7 +141,7 @@ public class ConfigController(
         return Ok(new { ok = passos.All(p => p.Ok), passos });
     }
 
-    /// <summary>POST /api/config/alerta-teste?tipo=temporal|zona — manda um alerta de teste para todos os inscritos.</summary>
+    /// <summary>POST /api/config/alerta-teste?tipo=chuva|temporal|zona — manda um alerta de teste para todos os inscritos.</summary>
     [HttpPost("alerta-teste")]
     public async Task<IActionResult> AlertaTeste([FromQuery] string tipo = "zona", CancellationToken ct = default)
     {
@@ -135,7 +149,13 @@ public class ConfigController(
             return Ok(Falha("Ninguém está inscrito ainda. Cadastre um email na página inicial do site primeiro."));
 
         (int Enviados, int Total) r;
-        if (tipo == "temporal")
+        if (tipo == "chuva")
+        {
+            var climaChuva = new ClimaAtual("Ribeirão Preto, SP", "", 22, 2.4, 92, 14, "Chuva moderada", 63, true,
+                new PrevisaoDia("", "Chuva moderada", 63, 18, 85, 26, 19), []);
+            r = await alertas.EnviarParaTodosAsync("teste de chuva", i => templates.AlertaChuva(i, climaChuva), ct);
+        }
+        else if (tipo == "temporal")
         {
             var clima = new ClimaAtual("Ribeirão Preto, SP", "", 24, 3.2, 90, 28, "Trovoada", 95, true,
                 new PrevisaoDia("", "Trovoada", 95, 42, 95, 27, 19), []);

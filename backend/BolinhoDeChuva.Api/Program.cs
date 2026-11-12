@@ -68,6 +68,7 @@ builder.Services.AddSingleton<InscricoesService>();
 builder.Services.AddSingleton<EmailService>();
 builder.Services.AddSingleton<EmailTemplates>();
 builder.Services.AddSingleton<AlertasService>();
+builder.Services.AddSingleton<HistoricoAlertasService>(); // histórico de alertas (aba Alagamentos)
 builder.Services.AddHostedService<MonitorDeAlertasService>(); // o "vigia" que dispara os alertas
 
 // Limite de cadastros: no máximo 10 por minuto vindos do mesmo computador,
@@ -146,6 +147,7 @@ app.MapGet(temSite ? "/api" : "/", () => Results.Json(new
         "GET  /api/noticias?abrangencia=regional|nacional|todas",
         "GET  /api/clima",
         "GET  /api/enchentes",
+        "GET  /api/alertas",
         "GET  /api/enchentes/{id}",
         "GET  /api/contatos",
         "GET  /api/sensor/status?zonaId=maquete-demo",

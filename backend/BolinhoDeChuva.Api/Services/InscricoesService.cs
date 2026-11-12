@@ -77,6 +77,20 @@ public class InscricoesService
         get { lock (_trava) return _estado.UltimoAlertaDeTemporal; }
     }
 
+    public DateTimeOffset? UltimoAlertaDeChuva
+    {
+        get { lock (_trava) return _estado.UltimoAlertaDeChuva; }
+    }
+
+    public void MarcarAlertaDeChuva(DateTimeOffset quando)
+    {
+        lock (_trava)
+        {
+            _estado.UltimoAlertaDeChuva = quando;
+            Salvar();
+        }
+    }
+
     public void MarcarAlertaDeTemporal(DateOnly dia)
     {
         lock (_trava)

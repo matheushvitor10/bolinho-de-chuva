@@ -72,9 +72,18 @@ async function carregarSituacao() {
       detalhe = `<p>Os emails estão sendo salvos na pasta <code>emails-de-teste</code> da API, e não enviados. Siga os passos abaixo para ligar o envio.</p>`;
     }
 
+    // Clima (Open-Meteo): está respondendo?
+    const c = s.clima || {};
+    const linhaClima = c.ok
+      ? `<p>Clima: <strong>funcionando</strong> (${esc(c.condicao)}, ${Math.round(c.temperatura)}°C${c.estaChovendo ? ", chovendo agora" : ""}).</p>`
+      : c.desatualizado
+        ? `<p class="situacao-erro">Clima: a Open-Meteo não respondeu agora; o site está mostrando o último dado. Confira a internet deste computador.</p>`
+        : `<p class="situacao-erro">Clima: sem resposta da Open-Meteo (${esc(c.erro || "erro desconhecido")}). Confira a internet deste computador.</p>`;
+
     alvo.innerHTML = `
       <span class="pilula ${metodo.classe}">${esc(metodo.texto)}</span>
       ${detalhe}
+      ${linhaClima}
       <p>Inscritos para receber alertas: <strong>${s.inscritos}</strong></p>
       <div class="linha-botoes">
         ${s.google.planilha ? `<a class="botao-secundario" href="${esc(s.google.planilha)}" target="_blank" rel="noopener">Abrir planilha de inscritos</a>` : ""}

@@ -156,6 +156,7 @@ Não quer mais receber? Cancele aqui: {cancelar}
 
     private const string CorAlagamento = "#C0392B";
     private const string CorTemporal = "#C9600C";
+    private const string CorChuva = "#2F6FA8";
 
     /// <summary>Um "medidor" (barra) no email: nível da água ou chance de chuva.</summary>
     private record Medidor(string Rotulo, string Valor, double Percentual, string Legenda);
@@ -195,6 +196,45 @@ Não quer mais receber? Cancele aqui: {cancelar}
             tipo: "alerta-temporal",
             linkBotao: $"{UrlSite}/#clima",
             textoBotao: "Acompanhar a previsão");
+    }
+
+    /// <summary>Aviso de que começou a chover de verdade em Ribeirão Preto.</summary>
+    public MensagemEmail AlertaChuva(Inscrito i, ClimaAtual clima)
+    {
+        var hoje = clima.PrevisaoHoje;
+        var percentual = Math.Clamp(clima.PrecipitacaoMm / 10 * 100, 0, 100);
+        var legenda = hoje.ProbabilidadeChuva is int p
+            ? string.Create(Br, $"Previsão para hoje: cerca de {hoje.ChuvaMm:0.#} mm, com {p}% de chance de chuva.")
+            : string.Create(Br, $"Previsão para hoje: cerca de {hoje.ChuvaMm:0.#} mm.");
+
+        return Alerta(i,
+            assunto: "🌧️ Começou a chover em Ribeirão Preto",
+            rotulo: "Alerta de chuva",
+            titulo: "Está chovendo agora",
+            nivelRisco: "Atenção",
+            cor: CorChuva,
+            chamada: $"Começou a chover em Ribeirão Preto: {clima.Condicao.ToLowerInvariant()}.",
+            paragrafo: "Chuva sozinha não é perigo, mas é o primeiro sinal para ficar de olho. " +
+                       "Ruas de fundo de vale e perto de córregos são as primeiras a acumular água.",
+            medidor: new Medidor("Chuva na última hora", string.Create(Br, $"{clima.PrecipitacaoMm:0.#} mm"), percentual, legenda),
+            detalhes:
+            [
+                ("Condição agora", string.Create(Br, $"{clima.Condicao}, {clima.Temperatura:0}°C")),
+                ("Vento", string.Create(Br, $"{clima.VentoKmh:0} km/h")),
+                ("Umidade do ar", $"{clima.Umidade}%"),
+                ("Emitido em", AgoraNoBrasil())
+            ],
+            passos:
+            [
+                "Evite passar por ruas que costumam alagar, fundos de vale e beiras de córrego.",
+                "No trânsito, vá devagar e mantenha distância: a pista fica escorregadia.",
+                "Se a chuva apertar, acompanhe o site. Se alguma região entrar em perigo, você recebe outro aviso."
+            ],
+            recado: "Leve o guarda-chuva e, se puder, espere a chuva forte passar antes de sair. " +
+                    "Eu continuo de olho nos córregos por você.",
+            tipo: "alerta-chuva",
+            linkBotao: $"{UrlSite}/#clima",
+            textoBotao: "Acompanhar o clima");
     }
 
     /// <summary>Alerta de região em nível de perigo (sensor, simulação ou monitoramento).</summary>

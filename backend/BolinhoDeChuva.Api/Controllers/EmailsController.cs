@@ -116,6 +116,14 @@ public class EmailsController(
     {
         if (!ambiente.IsDevelopment()) return NotFound();
 
+        if (tipo == "chuva")
+        {
+            var climaChuva = new ClimaAtual("Ribeirão Preto, SP", "", 22, 2.4, 92, 14, "Chuva moderada", 63, true,
+                new PrevisaoDia("", "Chuva moderada", 63, 18, 85, 26, 19), []);
+            var rc = await alertas.EnviarParaTodosAsync("teste de chuva", i => templates.AlertaChuva(i, climaChuva), ct);
+            return Ok(new { mensagem = $"Alerta de teste (chuva) enviado para {rc.Enviados} de {rc.Total} inscrito(s).", modoTeste = email.ModoTeste });
+        }
+
         if (tipo == "zona")
         {
             var zona = zonas.ObterTodas().First(z => !z.EhMaquete && z.Status == StatusZona.Perigo);

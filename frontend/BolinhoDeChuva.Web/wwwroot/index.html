@@ -42,6 +42,9 @@
       </span>
     </a>
 
+    <!-- Barra de pesquisa do site: feita em Vue.js (js/vue-paineis.js) -->
+    <div id="app-busca" class="busca-site"></div>
+
     <div class="weather-chip" id="weather-chip">
       <span class="weather-temp">—°</span>
       <span class="weather-cond">Carregando clima…</span>
@@ -158,8 +161,18 @@
       <div class="map-wrapper">
         <div id="flood-map" role="region" aria-label="Mapa das regiões monitoradas"></div>
       </div>
-      <div id="zones-list" class="zones-list">
+      <!-- Lista de regiões com busca e filtro: feita em Vue.js (js/vue-paineis.js) -->
+      <div id="app-regioes">
         <p class="loading">Carregando regiões…</p>
+      </div>
+
+      <div class="section-head historico-head">
+        <h2>Histórico de alertas</h2>
+        <p class="section-lead">Cada vez que uma região entra em atenção ou perigo, ou que começa a chover forte, o alerta aparece aqui. Ele fica <strong>ativo</strong> até a situação voltar ao normal.</p>
+      </div>
+      <!-- Histórico com filtro por local e "só ativos": feito em Vue.js (js/vue-paineis.js) -->
+      <div id="app-alertas">
+        <p class="loading">Carregando alertas…</p>
       </div>
     </div>
   </section>
@@ -172,80 +185,10 @@
         <p class="section-lead">Um sensor ultrassônico mede a altura da água na maquete e manda a leitura para o site a cada poucos segundos.</p>
       </div>
 
-      <div class="sensor-layout">
-        <div class="tanque-card">
-          <div class="tanque" id="tanque" role="img" aria-label="Nível da água na maquete">
-            <div class="tanque-agua" id="tanque-agua"></div>
-            <div class="tanque-linha perigo" id="linha-perigo"><span>Perigo</span></div>
-            <div class="tanque-linha atencao" id="linha-atencao"><span>Atenção</span></div>
-          </div>
-          <div class="tanque-nivel"><span id="sensor-nivel">— cm</span> de água</div>
-        </div>
-
-        <div class="sensor-info">
-          <div class="sensor-estado" id="sensor-estado" data-estado="aguardando">
-            <span class="sensor-luz" aria-hidden="true"></span>
-            <div>
-              <strong id="sensor-estado-titulo">Aguardando o sensor</strong>
-              <p id="sensor-estado-texto">O sensor ainda não mandou nenhuma leitura. Assim que ele for ligado, esta página começa a se mexer sozinha.</p>
-            </div>
-          </div>
-
-          <dl class="sensor-dados">
-            <div><dt>Situação</dt><dd id="sensor-status">—</dd></div>
-            <div><dt>Distância medida</dt><dd id="sensor-distancia">—</dd></div>
-            <div><dt>Última leitura</dt><dd id="sensor-ultima">—</dd></div>
-            <div><dt>Leituras recebidas</dt><dd id="sensor-total">0</dd></div>
-          </dl>
-
-          <div class="grafico-card">
-            <h3>Nível nas últimas leituras</h3>
-            <div id="sensor-grafico" class="sensor-grafico">
-              <p class="loading">O gráfico aparece quando chegarem as primeiras leituras.</p>
-            </div>
-          </div>
-        </div>
+      <!-- Tanque, gráfico e simulação: feitos em Vue.js (js/vue-paineis.js) -->
+      <div id="app-sensor">
+        <p class="loading">Carregando o painel do sensor…</p>
       </div>
-
-      <section class="simulacao" id="simulacao" aria-labelledby="titulo-simulacao" hidden>
-        <div class="simulacao-topo">
-          <div>
-            <h2 id="titulo-simulacao">Simular a água na maquete</h2>
-            <p>Enquanto o sensor não está ligado, use os botões para mudar o nível da água. Funciona igual ao sensor de verdade: o tanque, o gráfico, os alertas e os emails reagem na hora.</p>
-          </div>
-        </div>
-
-        <div class="simulacao-grupos">
-          <div class="sim-grupo">
-            <h3>Altura da água</h3>
-            <div class="sim-altura">
-              <button class="sim-btn" data-variacao="-1" aria-label="Baixar 1 centímetro">−1 cm</button>
-              <output id="sim-valor" class="sim-valor" for="sim-slider">0 cm</output>
-              <button class="sim-btn" data-variacao="1" aria-label="Subir 1 centímetro">+1 cm</button>
-            </div>
-            <input type="range" id="sim-slider" class="sim-slider" min="0" max="25" step="0.5" value="0" aria-label="Altura da água em centímetros">
-            <div class="sim-atalhos">
-              <button class="sim-atalho" data-nivel="0">Seca</button>
-              <button class="sim-atalho" data-nivel="6">Normal</button>
-              <button class="sim-atalho atencao" data-nivel="14">Atenção</button>
-              <button class="sim-atalho perigo" data-nivel="20">Perigo</button>
-            </div>
-          </div>
-
-          <div class="sim-grupo">
-            <h3>Água chegando</h3>
-            <p class="sim-ajuda">Escolha quanta chuva está caindo: a água sobe sozinha a cada 2 segundos.</p>
-            <div class="sim-chuva" role="group" aria-label="Intensidade da chuva">
-              <button class="sim-chuva-btn" data-taxa="0.5" aria-pressed="false">Chuva fraca<span>+0,5 cm</span></button>
-              <button class="sim-chuva-btn" data-taxa="1.5" aria-pressed="false">Chuva forte<span>+1,5 cm</span></button>
-              <button class="sim-chuva-btn" data-taxa="3" aria-pressed="false">Temporal<span>+3 cm</span></button>
-              <button class="sim-chuva-btn escoar" data-taxa="-1.5" aria-pressed="false">Escoar<span>−1,5 cm</span></button>
-            </div>
-            <button id="sim-parar" class="sim-parar" disabled>Parar</button>
-          </div>
-        </div>
-        <p id="sim-erro" class="sim-erro" role="alert"></p>
-      </section>
 
       <h2 class="subsection-title">Como o sensor funciona</h2>
       <ol class="passos">
@@ -429,5 +372,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="js/config.js"></script>
 <script src="js/app.js"></script>
+<!-- Vue.js 3 (cópia dentro do projeto, para não depender de site externo) -->
+<script src="js/vendor/vue.global.prod.js"></script>
+<script src="js/vue-paineis.js"></script>
 </body>
 </html>

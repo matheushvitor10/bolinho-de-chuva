@@ -13,6 +13,9 @@ public class EstadoInscricoes
 
     /// <summary>Dia do último alerta de temporal (pra mandar no máximo um por dia).</summary>
     public DateOnly? UltimoAlertaDeTemporal { get; set; }
+
+    /// <summary>Quando foi o último email de "começou a chover" (no máximo um a cada X horas).</summary>
+    public DateTimeOffset? UltimoAlertaDeChuva { get; set; }
 }
 
 /// <summary>O JSON que o site manda em POST /api/emails/inscrever.</summary>

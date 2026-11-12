@@ -90,8 +90,11 @@ function abrirAba(nome, { atualizarEndereco = true } = {}) {
     setTimeout(() => mapaInstancia && mapaInstancia.invalidateSize(), 0);
   }
 
-  if (nome === "sensor") carregarSensor();
-  reiniciarAtualizacaoDoSensor();
+  // Aba Sensor aberta: o painel Vue busca as leituras a cada 3 segundos.
+  window.painelSensor?.definirAtivo(nome === "sensor");
+  // Aba Alagamentos aberta: o histórico de alertas se atualiza a cada 10 segundos.
+  window.painelAlertas?.definirAtivo(nome === "alagamentos");
+  atualizacaoRapidaDasRegioes(nome === "sensor");
 }
 
 tabButtons.forEach(btn => btn.addEventListener("click", () => abrirAba(btn.dataset.tab)));
@@ -121,6 +124,7 @@ async function carregarNoticias() {
   try {
     const dados = await api("/noticias?abrangencia=todas");
     todasAsNoticias = dados.noticias || [];
+    window.painelBusca?.atualizar(); // a barra de pesquisa passa a achar as notícias novas
     fontesComErro = dados.fontesComErro || [];
 
     for (const filtro of Object.keys(NOMES_FILTRO)) {
@@ -136,7 +140,7 @@ async function carregarNoticias() {
 
 function mostrarNoticias() {
   const grid = document.getElementById("news-grid");
-  document.querySelectorAll(".filtro-btn").forEach(b => {
+  document.querySelectorAll(".filtro-btn[data-abrangencia]").forEach(b => {
     const ativo = b.dataset.abrangencia === filtroAtual;
     b.classList.toggle("active", ativo);
     b.setAttribute("aria-pressed", String(ativo));
@@ -170,7 +174,7 @@ function vazio(mensagem) {
   return `<div class="vazio"><img src="img/bolin-avatar.png" alt=""><p>${esc(mensagem)}</p></div>`;
 }
 
-document.querySelectorAll(".filtro-btn").forEach(btn =>
+document.querySelectorAll(".filtro-btn[data-abrangencia]").forEach(btn =>
   btn.addEventListener("click", () => {
     filtroAtual = btn.dataset.abrangencia;
     try { localStorage.setItem(CHAVE_CIDADE, filtroAtual); } catch { /* navegador sem armazenamento: tudo bem */ }
@@ -195,7 +199,7 @@ async function carregarClima() {
 
     chip.innerHTML = `
       <span class="weather-temp">${Math.round(clima.temperatura)}°</span>
-      <span class="weather-cond">${esc(clima.condicao)}</span>
+      <span class="weather-cond">${esc(clima.condicao)}${clima.desatualizado ? " · sem atualização" : ""}</span>
     `;
 
     detalhe.innerHTML = `
@@ -269,32 +273,15 @@ const STATUS_LABEL = { perigo: "Perigo", atencao: "Atenção", tranquilo: "Tranq
 const STATUS_COR = { perigo: "#C0392B", atencao: "#E0A526", tranquilo: "#2E8B57" };
 
 async function carregarZonas() {
-  const lista = document.getElementById("zones-list");
-
   try {
     const zonas = await api("/enchentes");
     ultimasZonas = zonas;
     zonasCarregadas = true;
 
-    // A maquete não é um lugar da cidade: ela aparece na aba "Sensor".
-    const daCidade = zonas.filter(z => !z.ehMaquete);
-    const ordem = { perigo: 0, atencao: 1, tranquilo: 2 };
-    daCidade.sort((a, b) => ordem[a.status] - ordem[b.status]);
-
-    lista.innerHTML = daCidade.map(z => `
-      <div class="zone-card ${esc(z.status)}">
-        <div>
-          <h3>${esc(z.nome)}</h3>
-          <p>${esc(z.observacao)}</p>
-        </div>
-        <div class="zone-lado">
-          <span class="status-pill ${esc(z.status)}">${STATUS_LABEL[z.status]}, ${num(z.cotaAtual)} m</span>
-          <span class="zone-fonte ${recebeLeituras(z) ? "sensor" : ""}">
-            ${z.fonte === "sensor" ? "sensor" : z.fonte === "simulacao" ? "simulação" : "dado de demonstração"}, às ${formatoHora.format(new Date(z.atualizadoEm))}
-          </span>
-        </div>
-      </div>
-    `).join("");
+    // A lista de regiões da aba Alagamentos é feita em Vue.js (js/vue-paineis.js):
+    // aqui só entregamos os dados, e o Vue cuida da tela, da busca e dos filtros.
+    window.painelRegioes?.receber(zonas);
+    window.painelBusca?.atualizar();
 
     if (document.getElementById("tab-alagamentos").classList.contains("active")) {
       desenharMapa(zonas);
@@ -303,7 +290,7 @@ async function carregarZonas() {
     verificarAlertas(zonas);
     atualizarHero();
   } catch {
-    lista.innerHTML = `<p class="loading">Não foi possível carregar as regiões agora.</p>`;
+    window.painelRegioes?.falhou();
   }
 }
 
@@ -343,188 +330,15 @@ function desenharMapa(zonas) {
   });
 }
 
-// ---------- Sensor da maquete ----------
-let intervaloSensor = null;
+// ---------- Sensor e simulação ----------
+// A aba "Sensor" (tanque, gráfico e simulação) é feita em Vue.js:
+// veja js/vue-paineis.js. Aqui fica só a atualização das regiões, que
+// mantém a barra de alerta, o sininho e o Bolin em dia durante a demonstração.
+let intervaloRegioesRapido = null;
 
-async function carregarSensor() {
-  try {
-    const s = await api("/sensor/status?zonaId=maquete-demo");
-    mostrarSensor(s);
-  } catch {
-    document.getElementById("sensor-estado").dataset.estado = "sem-sinal";
-    document.getElementById("sensor-estado-titulo").textContent = "Sem conexão com a API";
-    document.getElementById("sensor-estado-texto").textContent = "Não consegui perguntar à API como está o sensor.";
-  }
-}
-
-function mostrarSensor(s) {
-  const zona = s.zona;
-  const estado = document.getElementById("sensor-estado");
-  const titulo = document.getElementById("sensor-estado-titulo");
-  const texto = document.getElementById("sensor-estado-texto");
-
-  if (!s.jaRecebeuLeitura) {
-    estado.dataset.estado = "aguardando";
-    titulo.textContent = "Aguardando o sensor";
-    texto.textContent = "O sensor ainda não mandou nenhuma leitura. Assim que ele for ligado, esta página começa a se mexer sozinha.";
-  } else if (s.ultimaLeitura && s.ultimaLeitura.origem === "simulacao") {
-    estado.dataset.estado = "simulacao";
-    titulo.textContent = "Modo simulação";
-    texto.textContent = "O nível está vindo dos botões de simulação logo abaixo, não do sensor.";
-  } else if (s.conectado) {
-    estado.dataset.estado = "conectado";
-    titulo.textContent = "Sensor conectado";
-    texto.textContent = "Recebendo leituras ao vivo da maquete.";
-  } else {
-    estado.dataset.estado = "sem-sinal";
-    titulo.textContent = "Sensor sem sinal";
-    texto.textContent = `A última leitura chegou ${haQuantoTempo(s.ultimaLeituraEm)}. Confira se o ESP32 está ligado e conectado ao Wi-Fi.`;
-  }
-
-  // Tanque: a escala vai até um pouco acima do limite de perigo.
-  const maximo = zona.cotaAlerta * 1.25;
-  const pct = (v) => Math.max(0, Math.min(100, (v / maximo) * 100));
-  const tanque = document.getElementById("tanque");
-  tanque.dataset.status = s.jaRecebeuLeitura ? zona.status : "tranquilo";
-  document.getElementById("tanque-agua").style.height = `${pct(s.jaRecebeuLeitura ? zona.cotaAtual : 0)}%`;
-  document.getElementById("linha-atencao").style.bottom = `${pct(zona.cotaAtencao)}%`;
-  document.getElementById("linha-perigo").style.bottom = `${pct(zona.cotaAlerta)}%`;
-  document.getElementById("linha-atencao").querySelector("span").textContent = `Atenção, ${num(zona.cotaAtencao * 100)} cm`;
-  document.getElementById("linha-perigo").querySelector("span").textContent = `Perigo, ${num(zona.cotaAlerta * 100)} cm`;
-  tanque.setAttribute("aria-label", s.jaRecebeuLeitura
-    ? `Nível da água na maquete: ${num(zona.cotaAtual * 100)} centímetros, ${STATUS_LABEL[zona.status]}`
-    : "Nível da água na maquete: aguardando o sensor");
-
-  document.getElementById("sensor-nivel").textContent = s.jaRecebeuLeitura ? `${num(zona.cotaAtual * 100)} cm` : "— cm";
-  document.getElementById("sensor-status").innerHTML = s.jaRecebeuLeitura
-    ? `<span class="status-pill ${esc(zona.status)}">${STATUS_LABEL[zona.status]}</span>`
-    : "—";
-  document.getElementById("sensor-distancia").textContent = s.ultimaLeitura ? `${num(s.ultimaLeitura.distanciaCm)} cm` : "—";
-  document.getElementById("sensor-ultima").textContent = s.ultimaLeituraEm ? formatoHoraSeg.format(new Date(s.ultimaLeituraEm)) : "—";
-  document.getElementById("sensor-total").textContent = s.totalLeituras;
-
-  desenharGrafico(s.historico || [], zona);
-  sincronizarSimulacao(zona);
-}
-
-// Gráfico simples em SVG, sem biblioteca: nível (cm) ao longo das leituras.
-function desenharGrafico(historico, zona) {
-  const alvo = document.getElementById("sensor-grafico");
-  if (historico.length < 2) {
-    alvo.innerHTML = `<p class="loading">${historico.length
-      ? "Primeira leitura recebida. O gráfico aparece a partir da segunda."
-      : "O gráfico aparece quando chegarem as primeiras leituras."}</p>`;
-    return;
-  }
-
-  const L_ = 640, A = 180, mEsq = 44, mDir = 12, mTopo = 10, mBase = 26;
-  const larg = L_ - mEsq - mDir, alt = A - mTopo - mBase;
-  const maxCm = zona.cotaAlerta * 125;
-  const x = (i) => mEsq + (i / (historico.length - 1)) * larg;
-  const y = (cm) => mTopo + alt - (Math.min(cm, maxCm) / maxCm) * alt;
-
-  const pontos = historico.map((l, i) => `${x(i).toFixed(1)},${y(l.nivelM * 100).toFixed(1)}`).join(" ");
-  const ultima = historico[historico.length - 1];
-  const linhaRef = (cm, cor) =>
-    `<line x1="${mEsq}" x2="${L_ - mDir}" y1="${y(cm)}" y2="${y(cm)}" stroke="${cor}" stroke-dasharray="5 5" stroke-width="1.5"/>
-     <text x="${mEsq - 6}" y="${y(cm) + 4}" text-anchor="end" font-size="11" fill="${cor}">${num(cm)}</text>`;
-
-  alvo.innerHTML = `
-    <svg viewBox="0 0 ${L_} ${A}" role="img" aria-label="Gráfico do nível da água nas últimas ${historico.length} leituras">
-      <line x1="${mEsq}" x2="${L_ - mDir}" y1="${y(0)}" y2="${y(0)}" stroke="#DCE6EE"/>
-      <text x="${mEsq - 6}" y="${y(0) + 4}" text-anchor="end" font-size="11" fill="#56697A">0 cm</text>
-      ${linhaRef(zona.cotaAtencao * 100, "#B97C0C")}
-      ${linhaRef(zona.cotaAlerta * 100, "#C0392B")}
-      <polyline points="${pontos}" fill="none" stroke="#1D5A8E" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-      <circle cx="${x(historico.length - 1)}" cy="${y(ultima.nivelM * 100)}" r="5" fill="${STATUS_COR[ultima.status]}" stroke="#fff" stroke-width="2"/>
-      <text x="${mEsq}" y="${A - 6}" font-size="11" fill="#56697A">${formatoHoraSeg.format(new Date(historico[0].recebidaEm))}</text>
-      <text x="${L_ - mDir}" y="${A - 6}" font-size="11" fill="#56697A" text-anchor="end">${formatoHoraSeg.format(new Date(ultima.recebidaEm))}</text>
-    </svg>`;
-}
-
-// Com a aba "Sensor" aberta, atualiza a cada 3 segundos; fora dela, a cada 30.
-function reiniciarAtualizacaoDoSensor() {
-  clearInterval(intervaloSensor);
-  const abaSensorAberta = document.getElementById("tab-sensor").classList.contains("active");
-  intervaloSensor = setInterval(async () => {
-    await carregarSensor();
-    if (abaSensorAberta) carregarZonas(); // mantém o sininho e a barra de alerta em dia durante a demonstração
-  }, abaSensorAberta ? 3000 : 30000);
-}
-
-// ---------- Simulação da água na maquete (aba Sensor) ----------
-const simPainel = document.getElementById("simulacao");
-const simSlider = document.getElementById("sim-slider");
-const simValor = document.getElementById("sim-valor");
-const simErro = document.getElementById("sim-erro");
-const simParar = document.getElementById("sim-parar");
-const simChuvaBtns = document.querySelectorAll(".sim-chuva-btn");
-let simIntervalo = null;
-let simArrastando = false;
-
-async function simular(corpo) {
-  try {
-    const resposta = await fetch(`${API_BASE}/simulacao/maquete`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(corpo)
-    });
-    const dados = await resposta.json().catch(() => ({}));
-    if (!resposta.ok) throw new Error(dados.erro || `A API respondeu ${resposta.status}`);
-    simErro.textContent = "";
-    avisoApi.hidden = true;
-    mostrarSensor(dados);
-    carregarZonas(); // atualiza barra de alerta, sininho e o resumo do Bolin na hora
-  } catch (erro) {
-    simErro.textContent = `Não consegui simular: ${erro.message}`;
-    pararChuva();
-  }
-}
-
-function sincronizarSimulacao(zona) {
-  if (simArrastando) return;
-  const cm = Math.round(zona.cotaAtual * 1000) / 10;
-  simSlider.value = cm;
-  simValor.textContent = `${num(cm)} cm`;
-}
-
-function pararChuva() {
-  clearInterval(simIntervalo);
-  simIntervalo = null;
-  simChuvaBtns.forEach(b => b.setAttribute("aria-pressed", "false"));
-  simParar.disabled = true;
-}
-
-document.querySelectorAll(".sim-btn").forEach(b =>
-  b.addEventListener("click", () => simular({ variacaoCm: Number(b.dataset.variacao) })));
-
-document.querySelectorAll(".sim-atalho").forEach(b =>
-  b.addEventListener("click", () => { pararChuva(); simular({ nivelCm: Number(b.dataset.nivel) }); }));
-
-simSlider.addEventListener("input", () => { simArrastando = true; simValor.textContent = `${num(Number(simSlider.value))} cm`; });
-simSlider.addEventListener("change", () => { simArrastando = false; pararChuva(); simular({ nivelCm: Number(simSlider.value) }); });
-
-simChuvaBtns.forEach(b => b.addEventListener("click", () => {
-  const taxa = Number(b.dataset.taxa);
-  pararChuva();
-  b.setAttribute("aria-pressed", "true");
-  simParar.disabled = false;
-  simular({ variacaoCm: taxa });
-  simIntervalo = setInterval(() => {
-    const atual = Number(simSlider.value);
-    // para sozinho quando a maquete enche ou seca
-    if ((taxa > 0 && atual >= Number(simSlider.max)) || (taxa < 0 && atual <= 0)) return pararChuva();
-    simular({ variacaoCm: taxa });
-  }, 2000);
-}));
-simParar.addEventListener("click", pararChuva);
-
-async function verificarSimulacao() {
-  try {
-    const s = await api("/simulacao");
-    simPainel.hidden = !s.habilitada;
-    simSlider.max = s.nivelMaximoCm;
-  } catch { /* sem API: o painel continua escondido */ }
+function atualizacaoRapidaDasRegioes(ligar) {
+  clearInterval(intervaloRegioesRapido);
+  if (ligar) intervaloRegioesRapido = setInterval(carregarZonas, 3000);
 }
 
 // ---------- O Bolin resume a situação (página inicial) ----------
@@ -564,10 +378,13 @@ function atualizarHero() {
 }
 
 // ---------- Contatos ----------
+let ultimosContatos = [];
 async function carregarContatos() {
   const grid = document.getElementById("contacts-grid");
   try {
     const contatos = await api("/contatos");
+    ultimosContatos = contatos;
+    window.painelBusca?.atualizar();
     grid.innerHTML = contatos.map(c => {
       const ehSms = c.id === "alerta-sms";
       const href = ehSms ? `sms:${c.numero}` : `tel:${c.numero.replace(/\D/g, "")}`;
@@ -975,12 +792,10 @@ carregarNoticias();
 carregarClima();
 carregarZonas();
 carregarContatos();
-carregarSensor();
-verificarSimulacao();
 
 // Link "Configurar emails" no rodapé: só aparece no computador que roda o sistema.
 fetch(`${API_BASE}/config`).then(r => { if (r.ok) document.getElementById("link-config").hidden = false; }).catch(() => {});
 
-setInterval(carregarZonas, 30000);      // regiões: a cada 30 segundos
+setInterval(carregarZonas, 15000);      // regiões: a cada 15 segundos
 setInterval(carregarClima, 300000);     // clima: a cada 5 minutos
 setInterval(carregarNoticias, 600000);  // notícias: a cada 10 minutos
