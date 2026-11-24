@@ -6,7 +6,7 @@
 // formato que o ESP32 vai usar (POST /api/sensor-leitura).
 //
 // Como rodar:
-//   1. Deixe a API rodando (projeto BolinhoDeChuva.Api).
+//   1. Deixe o sistema ligado (npm start).
 //   2. Rode este projeto e escolha o modo no menu.
 //
 // Dá pra passar o endereço da API como argumento, se ele for outro:

@@ -1,0 +1,134 @@
+/* ==========================================================================
+   Página de configuração dos emails (configuracao.html).
+   ========================================================================== */
+
+/* ==========================================================================
+   Página de configuração dos emails (configuracao.html)
+   ========================================================================== */
+.voltar-site{ font-weight:700; text-decoration:none; }
+
+.voltar-site:hover{ text-decoration:underline; }
+
+.config-pagina{ padding-top:2.5rem; padding-bottom:4rem; max-width:860px; }
+
+.config-card{
+  background:var(--superficie);
+  border:1px solid var(--linha);
+  border-radius:var(--raio-g);
+  padding:1.4rem 1.6rem;
+  margin-bottom:1.2rem;
+}
+
+.config-card h2{ font-size:1.45rem; margin-bottom:.6rem; display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; }
+
+.config-card p{ margin:0 0 .8rem; }
+
+.config-erro{ background:#FBE5E2; border-color:#F2B8B1; }
+
+.etiqueta{
+  font-family:var(--fonte-texto);
+  font-size:.78rem;
+  font-weight:700;
+  background:#DFF2E7;
+  color:#1F6B41;
+  padding:.15rem .6rem;
+  border-radius:999px;
+}
+
+.pilula{ display:inline-block; font-weight:700; padding:.35rem .9rem; border-radius:999px; margin-bottom:.7rem; }
+
+.pilula.ok{ background:#DFF2E7; color:#1F6B41; }
+
+.pilula.atencao{ background:#FCF0D2; color:#8A5B00; }
+
+.pilula.desligado{ background:var(--fundo); color:var(--tinta-suave); border:1px solid var(--linha); }
+
+.pilula.erro{ background:#FBE5E2; color:var(--perigo); }
+
+.situacao-erro{ color:var(--perigo); }
+
+.passos-config{ margin:.4rem 0 0; padding-left:1.4rem; display:grid; gap:1.1rem; }
+
+.passos-config li::marker{ font-family:var(--fonte-titulo); font-weight:800; color:var(--azul); }
+
+.passos-config ul{ margin:.4rem 0; padding-left:1.2rem; }
+
+.nota{ display:block; font-size:.92rem; color:var(--tinta-suave); margin-top:.3rem; }
+
+.linha-botoes{ display:flex; flex-wrap:wrap; gap:.6rem; align-items:center; margin-top:.5rem; }
+
+.copiado{ font-size:.95rem; color:#1F6B41; font-weight:700; }
+
+.ver-codigo{ margin-top:.6rem; }
+
+.ver-codigo summary{ cursor:pointer; color:var(--azul); font-weight:700; font-size:.95rem; }
+
+.ver-codigo pre{
+  max-height:260px;
+  overflow:auto;
+  background:#0F2A42;
+  color:#D8E8F5;
+  font-size:.8rem;
+  line-height:1.45;
+  padding:1rem;
+  border-radius:var(--raio-m);
+  margin:.6rem 0 0;
+}
+
+.form-config{ display:flex; flex-wrap:wrap; gap:.6rem; margin-top:.6rem; }
+
+.form-config input{
+  flex:1 1 280px;
+  min-width:0;
+  font-family:var(--fonte-texto);
+  font-size:1rem;
+  padding:.65rem 1rem;
+  border:1.5px solid var(--linha);
+  border-radius:999px;
+  background:var(--fundo);
+  color:var(--tinta);
+}
+
+.form-config input:focus{ border-color:var(--azul-claro); background:#fff; outline:none; box-shadow:0 0 0 3px rgba(59,143,208,.25); }
+
+.botao-secundario{
+  display:inline-block;
+  background:var(--superficie);
+  border:1.5px solid var(--azul);
+  color:var(--azul);
+  font-family:var(--fonte-texto);
+  font-weight:700;
+  font-size:.95rem;
+  padding:.55rem 1.1rem;
+  border-radius:999px;
+  cursor:pointer;
+  text-decoration:none;
+}
+
+.botao-secundario:hover{ background:var(--ceu); }
+
+.botao-secundario:disabled{ opacity:.6; cursor:wait; }
+
+.resultado:empty{ display:none; }
+
+.resultado{ margin-top:1rem; }
+
+.lista-passos{ list-style:none; margin:0; padding:0; display:grid; gap:.45rem; }
+
+.lista-passos li{ display:flex; gap:.6rem; padding:.6rem .8rem; border-radius:var(--raio-p); line-height:1.45; }
+
+.lista-passos li.ok{ background:#DFF2E7; }
+
+.lista-passos li.falhou{ background:#FBE5E2; }
+
+.lista-passos .marca{ font-weight:800; }
+
+.lista-passos li.ok .marca{ color:#1F6B41; }
+
+.lista-passos li.falhou .marca{ color:var(--perigo); }
+
+.tudo-certo{ margin:.7rem 0 0; font-weight:700; color:#1F6B41; }
+
+.alternativa summary{ cursor:pointer; font-family:var(--fonte-titulo); font-weight:700; font-size:1.2rem; color:var(--canela); }
+
+.alternativa[open] summary{ margin-bottom:.8rem; }

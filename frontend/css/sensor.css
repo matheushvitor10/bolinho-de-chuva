@@ -1,0 +1,382 @@
+/* ==========================================================================
+   Página Sensor (sensor.html): tanque, gráfico e simulação da água.
+   ========================================================================== */
+
+/* ---------- Sensor ---------- */
+.sensor-layout{
+  display:grid;
+  grid-template-columns:minmax(200px, 260px) 1fr;
+  gap:1.5rem;
+  align-items:start;
+}
+
+.tanque-card{
+  background:var(--superficie);
+  border:1px solid var(--linha);
+  border-radius:var(--raio-g);
+  padding:1.4rem 1.4rem 1.1rem;
+  text-align:center;
+}
+
+.tanque{
+  position:relative;
+  height:300px;
+  border:3px solid var(--azul);
+  border-top:none;
+  border-radius:0 0 18px 18px;
+  background:linear-gradient(180deg, #fff, var(--ceu));
+  overflow:hidden;
+}
+
+.tanque-agua{
+  position:absolute;
+  left:0; right:0; bottom:0;
+  height:0%;
+  background:linear-gradient(180deg, var(--azul-claro), var(--azul));
+  transition:height .9s cubic-bezier(.3,.7,.3,1), background .5s;
+}
+
+.tanque-agua::before{
+  content:"";
+  position:absolute;
+  left:0; right:0; top:-6px;
+  height:12px;
+  background:radial-gradient(ellipse at 50% 100%, var(--azul-claro) 60%, transparent 62%) 0 0 / 28px 12px repeat-x;
+}
+
+.tanque[data-status="atencao"] .tanque-agua{ background:linear-gradient(180deg, #E9B949, #C98A12); }
+
+.tanque[data-status="atencao"] .tanque-agua::before{ background-image:radial-gradient(ellipse at 50% 100%, #E9B949 60%, transparent 62%); }
+
+.tanque[data-status="perigo"] .tanque-agua{ background:linear-gradient(180deg, #E0675A, var(--perigo)); }
+
+.tanque[data-status="perigo"] .tanque-agua::before{ background-image:radial-gradient(ellipse at 50% 100%, #E0675A 60%, transparent 62%); }
+
+.tanque-linha{
+  position:absolute;
+  left:0; right:0;
+  border-top:2px dashed;
+  font-size:.78rem;
+  text-align:right;
+  padding-right:.4rem;
+}
+
+.tanque-linha span{ position:relative; top:-1.35rem; background:rgba(255,255,255,.85); padding:0 .3rem; border-radius:4px; }
+
+.tanque-linha.atencao{ border-color:var(--atencao-forte); color:#8A5B00; }
+
+.tanque-linha.perigo{ border-color:var(--perigo); color:var(--perigo); }
+
+.tanque-nivel{ margin-top:.8rem; color:var(--tinta-suave); }
+
+.tanque-nivel span{
+  font-family:var(--fonte-titulo);
+  font-weight:800;
+  font-size:1.9rem;
+  color:var(--azul-escuro);
+  display:block;
+  line-height:1.1;
+}
+
+.sensor-info{ display:flex; flex-direction:column; gap:1rem; min-width:0; }
+
+.sensor-estado{
+  display:flex;
+  gap:.9rem;
+  align-items:flex-start;
+  background:var(--superficie);
+  border:1px solid var(--linha);
+  border-radius:var(--raio-m);
+  padding:1rem 1.2rem;
+}
+
+.sensor-estado strong{ font-family:var(--fonte-titulo); font-size:1.25rem; color:var(--tinta); }
+
+.sensor-estado p{ margin:.2rem 0 0; color:var(--tinta-suave); }
+
+.sensor-luz{
+  width:14px; height:14px;
+  border-radius:50%;
+  margin-top:.45rem;
+  flex-shrink:0;
+  background:#A9B7C3;
+}
+
+.sensor-estado[data-estado="aguardando"] .sensor-luz{ animation:piscar 1.6s ease-in-out infinite; }
+
+.sensor-estado[data-estado="conectado"] .sensor-luz{ background:var(--tranquilo); box-shadow:0 0 0 5px rgba(46,139,87,.18); }
+
+.sensor-estado[data-estado="sem-sinal"] .sensor-luz{ background:var(--atencao-forte); }
+
+.sensor-estado[data-estado="simulacao"] .sensor-luz{ background:var(--azul-claro); box-shadow:0 0 0 5px rgba(59,143,208,.2); }
+
+@keyframes piscar{ 50%{ opacity:.3; } }
+
+.sensor-dados{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));
+  gap:.7rem;
+  margin:0;
+}
+
+.sensor-dados div{
+  background:var(--superficie);
+  border:1px solid var(--linha);
+  border-radius:var(--raio-p);
+  padding:.7rem .9rem;
+}
+
+.sensor-dados dt{ font-size:.85rem; color:var(--tinta-suave); }
+
+.sensor-dados dd{ margin:0; font-weight:700; font-size:1.05rem; }
+
+.grafico-card{
+  background:var(--superficie);
+  border:1px solid var(--linha);
+  border-radius:var(--raio-m);
+  padding:1rem 1.2rem;
+}
+
+.grafico-card h3{ font-family:var(--fonte-texto); font-size:1rem; color:var(--tinta); margin-bottom:.6rem; }
+
+.sensor-grafico svg{ width:100%; height:auto; display:block; }
+
+.sensor-grafico .loading{ margin:0; font-size:.95rem; }
+
+.passos{
+  margin:0;
+  padding-left:1.4rem;
+  display:grid;
+  gap:.7rem;
+  max-width:75ch;
+}
+
+.passos li::marker{ font-family:var(--fonte-titulo); font-weight:800; color:var(--azul); }
+
+/* ---------- Simulação da água (página Sensor) ---------- */
+.simulacao{
+  margin-top:2rem;
+  background:var(--superficie);
+  border:2px dashed #BCD5EA;
+  border-radius:var(--raio-g);
+  padding:1.4rem 1.6rem 1.2rem;
+}
+
+.simulacao h2{ font-size:1.5rem; margin-bottom:.3rem; }
+
+.simulacao-topo p{ margin:0 0 1.2rem; color:var(--tinta-suave); max-width:70ch; }
+
+.simulacao-grupos{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));
+  gap:1rem;
+}
+
+.sim-grupo{
+  background:var(--fundo);
+  border-radius:var(--raio-m);
+  padding:1rem 1.1rem 1.1rem;
+}
+
+.sim-grupo h3{ font-family:var(--fonte-texto); font-size:1rem; color:var(--tinta); margin-bottom:.7rem; }
+
+.sim-ajuda{ margin:-.3rem 0 .8rem; font-size:.92rem; color:var(--tinta-suave); }
+
+.sim-altura{ display:flex; align-items:center; gap:.8rem; margin-bottom:.6rem; }
+
+.sim-valor{
+  flex:1;
+  text-align:center;
+  font-family:var(--fonte-titulo);
+  font-weight:800;
+  font-size:1.8rem;
+  color:var(--azul-escuro);
+}
+
+.sim-btn{
+  background:var(--azul);
+  color:#fff;
+  border:none;
+  border-radius:var(--raio-p);
+  font-family:var(--fonte-texto);
+  font-weight:700;
+  font-size:1rem;
+  padding:.55rem .9rem;
+  cursor:pointer;
+  min-width:72px;
+}
+
+.sim-btn:hover{ background:var(--azul-escuro); }
+
+.sim-slider{ width:100%; accent-color:var(--azul); margin:.2rem 0 .8rem; }
+
+.sim-atalhos{ display:flex; flex-wrap:wrap; gap:.4rem; }
+
+.sim-atalho{
+  flex:1 1 auto;
+  background:var(--superficie);
+  border:1.5px solid var(--linha);
+  border-radius:999px;
+  font-family:var(--fonte-texto);
+  font-size:.9rem;
+  font-weight:700;
+  padding:.4rem .8rem;
+  cursor:pointer;
+  color:var(--tinta);
+}
+
+.sim-atalho:hover{ border-color:var(--azul-claro); }
+
+.sim-atalho.atencao{ color:#8A5B00; border-color:#F0D58A; }
+
+.sim-atalho.perigo{ color:var(--perigo); border-color:#F2B8B1; }
+
+.sim-chuva{ display:grid; grid-template-columns:repeat(2, 1fr); gap:.5rem; margin-bottom:.6rem; }
+
+.sim-chuva-btn{
+  background:var(--superficie);
+  border:1.5px solid var(--linha);
+  border-radius:var(--raio-m);
+  font-family:var(--fonte-texto);
+  font-weight:700;
+  font-size:.95rem;
+  color:var(--tinta);
+  padding:.55rem .6rem;
+  cursor:pointer;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  line-height:1.25;
+}
+
+.sim-chuva-btn span{ font-weight:400; font-size:.8rem; color:var(--tinta-suave); }
+
+.sim-chuva-btn:hover{ border-color:var(--azul-claro); }
+
+.sim-chuva-btn[aria-pressed="true"]{ background:var(--azul); border-color:var(--azul); color:#fff; }
+
+.sim-chuva-btn[aria-pressed="true"] span{ color:#CFE3F3; }
+
+.sim-chuva-btn[aria-pressed="true"]::after{ content:"chovendo…"; font-size:.72rem; font-weight:400; opacity:.85; }
+
+.sim-chuva-btn.escoar[aria-pressed="true"]::after{ content:"escoando…"; }
+
+.sim-parar{
+  width:100%;
+  background:none;
+  border:1.5px solid var(--linha);
+  border-radius:999px;
+  font-family:var(--fonte-texto);
+  font-weight:700;
+  padding:.45rem;
+  cursor:pointer;
+  color:var(--tinta);
+}
+
+.sim-parar:disabled{ opacity:.45; cursor:default; }
+
+.sim-erro{ margin:.8rem 0 0; color:var(--perigo); font-size:.95rem; }
+
+.sim-erro:empty{ display:none; }
+
+/* ---------- Sensor do Breno pelo cabo USB (js/sensor-usb.js) ---------- */
+.usb-card{
+  background:var(--superficie);
+  border:1px solid var(--linha);
+  border-radius:var(--raio-m);
+  padding:1rem 1.2rem;
+  margin-bottom:1.2rem;
+}
+
+.usb-topo{ display:flex; align-items:center; gap:.9rem; flex-wrap:wrap; }
+
+.usb-luz{
+  width:14px; height:14px;
+  border-radius:50%;
+  flex-shrink:0;
+  background:#A9B7C3;
+}
+
+.usb-card[data-estado="conectado"] .usb-luz{ background:var(--tranquilo); box-shadow:0 0 0 5px rgba(46,139,87,.18); }
+.usb-card[data-estado="aviso"] .usb-luz{ background:var(--atencao-forte); box-shadow:0 0 0 5px rgba(224,165,38,.2); }
+.usb-card[data-estado="erro"] .usb-luz{ background:var(--perigo); box-shadow:0 0 0 5px rgba(192,57,43,.16); }
+
+.usb-textos{ flex:1 1 280px; min-width:0; }
+
+.usb-textos h2{ margin:0; font-family:var(--fonte-titulo); font-size:1.2rem; color:var(--tinta); line-height:1.2; }
+
+.usb-textos p{ margin:.15rem 0 0; color:var(--tinta-suave); }
+
+.usb-card[data-estado="erro"] .usb-textos p{ color:var(--perigo); }
+
+.usb-botoes{ display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
+
+.usb-botao{
+  background:var(--superficie);
+  color:var(--azul-escuro);
+  border:1px solid var(--azul-claro);
+  border-radius:999px;
+  font-family:var(--fonte-texto);
+  font-weight:700;
+  font-size:.95rem;
+  padding:.6rem 1.1rem;
+  cursor:pointer;
+}
+
+.usb-botao:hover{ background:var(--ceu); }
+
+.usb-link{
+  background:none;
+  border:none;
+  color:var(--azul);
+  font-family:var(--fonte-texto);
+  font-size:.9rem;
+  text-decoration:underline;
+  cursor:pointer;
+  padding:.4rem .2rem;
+}
+
+.usb-link:hover{ color:var(--azul-escuro); }
+
+.usb-botao:disabled{ opacity:.5; cursor:default; background:var(--superficie); }
+
+#usb-conectar:disabled{ cursor:not-allowed; }
+
+.usb-ajustes{
+  margin-top:.9rem;
+  padding-top:.9rem;
+  border-top:1px solid var(--linha);
+}
+
+.usb-ajustes label{ display:block; font-weight:700; color:var(--tinta); margin-bottom:.35rem; }
+
+.usb-altura{ display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; }
+
+.usb-altura input{
+  width:6.5rem;
+  font:inherit;
+  font-size:1.05rem;
+  padding:.5rem .7rem;
+  border:1px solid var(--linha);
+  border-radius:var(--raio-p);
+  color:var(--tinta);
+  background:var(--superficie);
+}
+
+.usb-altura input:focus{ outline:2px solid var(--azul-claro); outline-offset:1px; }
+
+.usb-altura span{ color:var(--tinta-suave); margin-right:.4rem; }
+
+.usb-dica{ margin:.6rem 0 0; font-size:.9rem; color:var(--tinta-suave); }
+
+@media (max-width: 820px){
+  .sensor-layout{ grid-template-columns:1fr; }
+  .tanque-card{ max-width:320px; }
+  .usb-botoes{ width:100%; }
+  .usb-botoes button{ flex:1; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .sensor-estado .sensor-luz{ animation:none !important; }
+  .tanque-agua{ transition:none; }
+}
