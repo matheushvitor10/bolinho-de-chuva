@@ -1,0 +1,249 @@
+/* ==========================================================================
+   Página Início (index.html): o Bolin no topo, o cadastro de email e as notícias.
+   ========================================================================== */
+
+/* ==========================================================================
+   Hero da página inicial — o Bolin conta como está a chuva
+   ========================================================================== */
+.hero{
+  position:relative;
+  background:linear-gradient(180deg, var(--azul-escuro) 0%, var(--azul) 100%);
+  color:#fff;
+  overflow:hidden;
+  padding:3rem 0 5.5rem;
+}
+
+.hero-chuva{
+  position:absolute;
+  inset:-200px 0 0 0;
+  background-image:
+    repeating-linear-gradient(105deg, transparent 0 22px, rgba(255,255,255,.10) 22px 23px, transparent 23px 61px),
+    repeating-linear-gradient(105deg, transparent 0 37px, rgba(142,195,232,.12) 37px 38px, transparent 38px 89px);
+  background-size:100% 140px, 100% 220px;
+  animation:chover 1.4s linear infinite;
+  opacity:0;
+  transition:opacity .8s ease;
+  pointer-events:none;
+}
+
+.hero[data-chovendo="sim"] .hero-chuva{ opacity:1; }
+
+@keyframes chover{
+  from{ background-position:0 0, 0 0; }
+  to{ background-position:-38px 140px, -60px 220px; }
+}
+
+.hero-conteudo{
+  position:relative;
+  z-index:2;
+  display:flex;
+  align-items:flex-start;
+  gap:1.75rem;
+}
+
+.hero-bolin{
+  height:270px;
+  width:auto;
+  flex-shrink:0;
+  align-self:flex-end;
+  margin:0 0 -4.6rem -.5rem;   /* os pés dele "pisam" na onda */
+  filter:drop-shadow(0 14px 16px rgba(0,0,0,.28));
+}
+
+.hero-texto{ flex:1; min-width:0; }
+
+.hero h1{ color:#fff; margin-bottom:1rem; }
+
+.balao{
+  position:relative;
+  background:#fff;
+  color:var(--tinta);
+  font-size:1.2rem;
+  line-height:1.5;
+  padding:1rem 1.25rem;
+  border-radius:var(--raio-g);
+  border-top-left-radius:6px;
+  margin:0 0 1.4rem;
+  max-width:62ch;
+  box-shadow:0 8px 24px rgba(0,0,0,.15);
+}
+
+.balao::before{
+  content:"";
+  position:absolute;
+  left:-14px; top:0;
+  border-width:0 16px 16px 0;
+  border-style:solid;
+  border-color:transparent #fff transparent transparent;
+}
+
+.balao strong{ color:var(--canela); }
+
+.hero-resumo{
+  list-style:none;
+  margin:0; padding:0;
+  display:flex;
+  flex-wrap:wrap;
+  gap:.6rem 2.2rem;
+}
+
+.hero-resumo li{ display:flex; align-items:baseline; gap:.45rem; }
+
+.hr-valor{
+  font-family:var(--fonte-titulo);
+  font-weight:800;
+  font-size:1.65rem;
+  line-height:1;
+}
+
+.hr-rotulo{ color:#CFE3F3; font-size:.95rem; }
+
+.hero-onda{
+  position:absolute;
+  left:0; bottom:-1px;
+  width:100%; height:80px;
+  display:block;
+}
+
+.onda-meio{ fill:#8EC3E8; opacity:.5; }
+
+.onda-fundo{ fill:var(--fundo); }
+
+.news-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(290px, 1fr));
+  gap:1rem;
+}
+
+.news-card{
+  background:var(--superficie);
+  border:1px solid var(--linha);
+  border-radius:var(--raio-m);
+  padding:1.15rem 1.25rem 1.1rem;
+  text-decoration:none;
+  color:var(--tinta);
+  display:flex;
+  flex-direction:column;
+  gap:.5rem;
+}
+
+.news-card:hover{ border-color:var(--azul-claro); }
+
+.news-card:hover h3{ text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:3px; }
+
+.news-card h3{
+  font-family:var(--fonte-texto);
+  font-weight:700;
+  font-size:1.05rem;
+  line-height:1.35;
+  color:var(--tinta);
+}
+
+.news-card p{ color:var(--tinta-suave); font-size:.94rem; margin:0; }
+
+.news-meta{
+  margin-top:auto;
+  display:flex;
+  justify-content:space-between;
+  gap:.5rem;
+  font-size:.85rem;
+  color:var(--tinta-suave);
+}
+
+.news-fonte{ color:var(--azul); font-weight:700; }
+
+.vazio{
+  grid-column:1 / -1;
+  display:flex;
+  align-items:center;
+  gap:1rem;
+  background:var(--superficie);
+  border:1px dashed var(--linha);
+  border-radius:var(--raio-m);
+  padding:1.2rem 1.4rem;
+}
+
+.vazio img{ width:56px; height:56px; flex-shrink:0; }
+
+.vazio p{ margin:0; }
+
+.alerta-email{
+  display:flex;
+  gap:1.3rem;
+  align-items:flex-start;
+  background:var(--superficie);
+  border:2px solid #BCD5EA;
+  border-radius:var(--raio-g);
+  padding:1.4rem 1.6rem;
+  margin:1.2rem 0 3rem;
+  scroll-margin-top:140px;
+}
+
+.alerta-email-bolin{ width:96px; height:96px; flex-shrink:0; }
+
+.alerta-email-conteudo{ flex:1; min-width:0; }
+
+.alerta-email h2{ font-size:1.55rem; margin-bottom:.3rem; }
+
+.alerta-email p{ margin:0 0 1rem; color:var(--tinta-suave); max-width:62ch; }
+
+.form-email{
+  display:flex;
+  flex-wrap:wrap;
+  gap:.6rem;
+  max-width:560px;
+}
+
+.form-email input{
+  flex:1 1 240px;
+  min-width:0;
+  font-family:var(--fonte-texto);
+  font-size:1.05rem;
+  padding:.7rem 1rem;
+  border:1.5px solid var(--linha);
+  border-radius:999px;
+  background:var(--fundo);
+  color:var(--tinta);
+}
+
+.form-email input:focus{ border-color:var(--azul-claro); background:#fff; outline:none; box-shadow:0 0 0 3px rgba(59,143,208,.25); }
+
+.form-email input[aria-invalid="true"]{ border-color:var(--perigo); }
+
+.email-retorno{ margin-top:.8rem; font-size:.98rem; }
+
+.email-retorno:empty{ display:none; }
+
+.email-retorno.ok{ color:#1F6B41; }
+
+.email-retorno.erro{ color:var(--perigo); }
+
+.email-retorno .sugestao{
+  margin-left:.4rem;
+  background:none;
+  border:none;
+  color:var(--azul);
+  font:inherit;
+  font-weight:700;
+  text-decoration:underline;
+  cursor:pointer;
+  padding:0;
+}
+
+@media (max-width: 640px){
+  .hero{ padding:2rem 0 4.5rem; }
+  .hero-conteudo{ flex-direction:column; gap:1rem; }
+  .hero-bolin{ height:150px; align-self:flex-start; margin:0; }
+  .balao{ font-size:1.05rem; border-top-left-radius:var(--raio-g); }
+  .balao::before{ display:none; }
+  .hr-valor{ font-size:1.35rem; }
+  .alerta-email{ flex-direction:column; gap:.8rem; padding:1.2rem; }
+  .alerta-email-bolin{ width:64px; height:64px; }
+  .form-email .botao-principal{ width:100%; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .hero-chuva{ animation:none !important; }
+}
+
+.hero + .wrap{ padding-top:1rem; }

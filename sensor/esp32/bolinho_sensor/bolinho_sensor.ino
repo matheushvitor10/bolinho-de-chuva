@@ -1,15 +1,18 @@
 // ============================================================================
-// Bolinho de Chuva — leitor do sensor ultrassônico (ESP32 + HC-SR04)
+// Bolinho de Chuva — sensor da maquete (ESP32 + HC-SR04)
 // ============================================================================
-// CÓDIGO DE REFERÊNCIA. Se o Breno já tiver o código dele funcionando, não
-// precisa trocar por este: o que importa é mandar o MESMO JSON para o MESMO
-// endereço (veja "Contrato do sensor" no README.md da pasta principal):
+// O que este código faz, a cada 3 segundos:
+//   1. mede a distância do sensor até a água (5 medições, usa a do meio);
+//   2. manda essa distância pela Wi-Fi para o site do Bolinho de Chuva:
 //
-//   POST http://<endereço-da-api>/api/sensor-leitura
-//   Content-Type: application/json
-//   { "zonaId": "maquete-demo", "distanciaCm": 15.2, "alturaInstalacaoM": 0.28 }
+//      POST https://bolinho-de-chuva.onrender.com/api/sensor-leitura
+//      { "zonaId": "maquete-demo", "distanciaCm": 15.2, "alturaInstalacaoM": 0.28 }
 //
-// Montagem física e calibração: veja MAQUETE.md, na pasta sensor/esp32.
+//   3. o site calcula o nível da água (altura do sensor - distância) e cuida
+//      do resto: tanque, gráfico, aviso vermelho e emails de alerta.
+//
+// Antes de gravar no ESP32, troque só as linhas marcadas com  <-- TROQUE.
+// Para ver o que está acontecendo: Ferramentas > Monitor Serial, em 115200.
 // ============================================================================
 
 #include <WiFi.h>
@@ -17,20 +20,18 @@
 #include <HTTPClient.h>
 
 // ---------- Configure aqui ----------
-const char* WIFI_SSID  = "NOME_DA_SUA_REDE_WIFI";
-const char* WIFI_SENHA = "SENHA_DA_SUA_REDE_WIFI";
+// Wi-Fi 2.4 GHz (o ESP32 não conecta em 5 GHz nem em rede que pede login numa
+// página). O mais garantido é o roteador do celular.
+const char* WIFI_SSID  = "NOME_DA_REDE_WIFI";     // <-- TROQUE
+const char* WIFI_SENHA = "SENHA_DA_REDE_WIFI";    // <-- TROQUE
 
-// Escolha UM dos dois endereços:
-//
-// A) Site hospedado no Render (funciona de qualquer Wi-Fi com internet):
-//    "https://bolinho-de-chuva.onrender.com/api/sensor-leitura"
-//    (troque pelo endereço que o Render deu para vocês)
-//
-// B) Sistema rodando no computador, na mesma rede Wi-Fi:
-//    use o IP do computador (no Windows: abra o cmd e rode "ipconfig", procure
-//    "Endereço IPv4"). NÃO use "localhost": para o ESP32, localhost é ele mesmo.
-//    Ligue o sistema com "npm run rede" (e não "npm start").
-const char* API_URL = "http://192.168.0.10:5080/api/sensor-leitura";
+// Endereço do site no Render + /api/sensor-leitura.
+// Confira o endereço no topo da página do serviço, no painel do Render.
+const char* API_URL = "https://bolinho-de-chuva.onrender.com/api/sensor-leitura";
+
+// (Plano B, sem internet: sistema rodando no computador com "npm run rede",
+//  na mesma Wi-Fi. Use o IP do computador, que aparece no "ipconfig":
+//  "http://192.168.0.10:5080/api/sensor-leitura". Nunca use "localhost".)
 
 // Se a API exigir chave (Sensor:Chave no appsettings.json), coloque a mesma aqui.
 // Deixe "" enquanto a chave estiver vazia na API.
@@ -39,10 +40,11 @@ const char* CHAVE_SENSOR = "";
 // Qual zona este sensor representa. Para a maquete, use "maquete-demo".
 const char* ZONA_ID = "maquete-demo";
 
-// Altura do sensor, em METROS, medida do fundo do recipiente até o sensor.
-const float ALTURA_INSTALACAO_M = 0.28;  // exemplo: 28 cm
+// Altura do sensor, em METROS, medida do fundo da maquete até o sensor.
+const float ALTURA_INSTALACAO_M = 0.28;  // <-- TROQUE pela altura medida (28 cm = 0.28)
 
-// Pinos ligados no sensor (ajuste conforme a fiação)
+// Pinos ligados no sensor. Se o Breno ligou em outros pinos, troque aqui.
+// Atenção: o Echo do HC-SR04 sai 5 V; use o divisor de tensão (veja MAQUETE.md).
 const int PINO_TRIG = 5;
 const int PINO_ECHO = 18;
 
@@ -117,7 +119,7 @@ void enviarLeitura(float distanciaCm) {
   if (WiFi.status() != WL_CONNECTED) return;
 
   HTTPClient http;
-  http.setTimeout(15000);  // o site gratuito pode demorar a "acordar"
+  http.setTimeout(20000);  // o site gratuito pode demorar a "acordar" (1ª vez ~1 min)
 
   // https (site hospedado) precisa de um cliente seguro; http (computador) não.
   // setInsecure() não confere o certificado do site: simples e suficiente pro projeto.
