@@ -1,226 +1,262 @@
-# Bolinho de Chuva — SPA (Sistema de Prevenção de Alagamentos)
+# Bolinho de Chuva
 
-Site de acompanhamento de chuvas e alagamentos de **Ribeirão Preto e Franca**, com
-sensor de nível da água, alertas por email e o mascote **Bolin**.
+Sistema de prevenção de alagamentos para Ribeirão Preto e Franca (SP), feito no Projeto
+Integrador Interdisciplinar (PINT2).
 
-**Linguagens:** HTML, CSS e JavaScript (o site) · C# (o programa que entrega o site e
-responde a API) · Vue.js nas partes que atualizam sozinhas.
+A ideia é juntar num lugar só o que a gente precisa saber quando a chuva aperta: como está
+o tempo agora, quais regiões da cidade costumam alagar, as notícias de chuva da região e o
+nível da água medido por um sensor numa maquete. Quando alguma coisa sai do normal, o site
+avisa na tela e por email.
 
----
+Quem acompanha o usuário pelo site é o **Bolin**, um bolinho de chuva de 5 anos, de capa
+azul e galochas, que é o mascote do projeto.
 
-## Como ligar
+**Site publicado:** https://bolinho-de-chuva.onrender.com
+(fica no plano gratuito do Render, então se ninguém abriu o site nos últimos 15 minutos a
+primeira abertura demora cerca de 1 minuto)
 
-Precisa do [Node.js](https://nodejs.org) instalado. Na pasta do projeto, no terminal:
-
-```
-npm install      ← só na primeira vez (instala o .NET sozinho, se faltar)
-npm start        ← liga o sistema e abre o navegador
-```
-
-Tudo fica em **http://localhost:5080**. Para desligar: **Ctrl + C**.
+![Página inicial do Bolinho de Chuva](docs/tela-inicio.jpg)
 
 ---
 
-## Onde está cada coisa (mapa rápido)
+## O que tem no site
 
-| Se pedirem… | Abra |
+| Página | O que mostra |
 |---|---|
-| **A página inicial** | `frontend/index.html` · `css/inicio.css` · `js/inicio.js` |
-| **A página de alagamentos** (mapa, regiões, histórico) | `frontend/alagamentos.html` · `css/alagamentos.css` · `js/alagamentos.js` |
-| **A página do sensor** (nível da água, simulação) | `frontend/sensor.html` · `css/sensor.css` · `js/sensor.js` |
-| **Como o site lê o Arduino do Breno (cabo USB)** | `frontend/js/sensor-usb.js` |
-| **A página do clima** | `frontend/clima.html` · `css/clima.css` · `js/clima.js` |
-| **As páginas Riscos, Cuidados, Ajuda e Conheça o Bolin** | `riscos.html`, `cuidados.html`, `ajuda.html`, `bolin.html` (cada uma com seu `.css` e `.js`) |
-| **O cabeçalho, a barra vermelha e o sininho** | `frontend/js/comum.js` · `css/comum.css` |
-| **A barra de pesquisa** | `frontend/js/busca.js` · `css/busca.css` |
-| **O Bolin do canto da tela** (fala e perguntas) | `frontend/js/bolin-assistente.js` · `css/bolin-assistente.css` |
-| **Onde está o Vue.js** | `js/sensor.js`, `js/alagamentos.js` e `js/busca.js` (veja a seção "Vue.js") |
-| **O programa em C# / o back-end** | `backend/Program.cs` (o começo de tudo) |
-| **As rotas da API** | `backend/Controllers/` (um arquivo por assunto) |
-| **Como o clima é buscado** | `backend/Services/Clima/ClimaService.cs` |
-| **Como as notícias são filtradas** | `backend/Services/Noticias/NoticiasService.cs` |
-| **Como o nível do sensor é calculado** | `backend/Services/Regioes/ZonasService.cs` |
-| **Quando os alertas são enviados** | `backend/Services/Alertas/MonitorDeAlertasService.cs` |
-| **Como os emails são montados e enviados** | `backend/Services/Email/EmailTemplates.cs` e `EmailService.cs` |
-| **As regiões e os telefones** | `backend/Data/ZonasIniciais.cs` e `backend/Data/ContatosData.cs` |
-| **O código do Arduino do Breno** | `sensor/arduino/sensor_breno/sensor_breno.ino` |
-| **O código do ESP32 (opção com Wi-Fi)** | `sensor/esp32/bolinho_sensor/bolinho_sensor.ino` |
+| **Início** | Resumo do dia, cadastro de email para receber alertas e notícias de chuva separadas por cidade (Ribeirão Preto, Franca e Brasil) |
+| **Alagamentos** | Mapa das regiões monitoradas, lista com busca e filtro por situação e o histórico de alertas |
+| **Sensor** | Nível da água da maquete em tempo real, gráfico das últimas leituras, conexão com o Arduino pelo cabo USB e botões para simular a água |
+| **Clima** | Chuva prevista, temperatura, vento, umidade e previsão dos próximos dias |
+| **Riscos** | Por que é perigoso entrar na água de um alagamento |
+| **Cuidados** | O que fazer antes, durante e depois de um alagamento |
+| **Ajuda** | Telefones de emergência: Defesa Civil 199, Bombeiros 193, SAMU 192 |
+| **Conheça o Bolin** | A história do mascote e dicas |
 
-Cada página tem um **HTML, um CSS e um JS com o mesmo nome**. Todo arquivo começa
-com um comentário dizendo o que ele faz.
+Em todas as páginas tem:
+
+- uma **barra de pesquisa** no topo, que acha páginas, telefones e cuidados enquanto você digita;
+- o **sininho** com as regiões em alerta naquele momento;
+- uma **faixa vermelha** quando alguma região entra em perigo (dá para fechar no X);
+- o **Bolin no canto da tela**: na primeira página que a pessoa abre ele conta como está o
+  tempo, e depois dá para clicar nele e escolher perguntas prontas.
+
+Cada região fica em uma de três situações: **tranquilo**, **atenção** ou **perigo**.
 
 ---
 
-## As pastas
+## Como funciona
 
-```
-bolinho-de-chuva/
-├── frontend/                   O SITE (HTML, CSS e JavaScript)
-│   ├── index.html              Início
-│   ├── alagamentos.html        Alagamentos
-│   ├── sensor.html             Sensor
-│   ├── clima.html              Clima
-│   ├── riscos.html             Riscos
-│   ├── cuidados.html           Cuidados
-│   ├── ajuda.html              Ajuda (telefones)
-│   ├── bolin.html              Conheça o Bolin
-│   ├── configuracao.html       Configuração dos emails (só no computador)
-│   ├── css/                    um .css por página + comum.css, busca.css, bolin-assistente.css
-│   ├── js/                     um .js por página  + comum.js,  busca.js,  bolin-assistente.js
-│   │   └── biblioteca/vue.js   a biblioteca do Vue.js
-│   └── img/                    logo e imagens do Bolin
-│
-├── backend/                    O PROGRAMA EM C# (entrega o site e responde a API)
-│   ├── Program.cs              o começo de tudo (configurações e serviços)
-│   ├── Controllers/            as rotas da API (/api/...)
-│   ├── Services/               quem faz o trabalho, separado por assunto:
-│   │   ├── Clima/              busca o clima na Open-Meteo
-│   │   ├── Noticias/           busca e filtra as notícias
-│   │   ├── Regioes/            regiões, sensor e simulação
-│   │   ├── Alertas/            histórico e o "vigia" que manda os alertas
-│   │   ├── Email/              monta e envia os emails
-│   │   └── Sistema/            configurações e hospedagem
-│   ├── Models/                 o formato de cada dado
-│   ├── Data/                   regiões e telefones
-│   ├── Recursos/               imagens dos emails e o script do Google
-│   └── appsettings.json        configurações (o appsettings.Local.json guarda a chave do Google)
-│
-├── sensor/                     o código do Arduino do Breno, do ESP32 e o simulador do sensor (C#)
-├── scripts/                    o que os comandos npm fazem
-└── Dockerfile, render.yaml     receita da hospedagem no Render (não precisa mexer)
-```
+O projeto é um programa só, escrito em **C#** (ASP.NET Core, .NET 8). Ele faz duas coisas:
+entrega as páginas do site e responde a API, que fica em `/api`.
 
----
+O site é **HTML, CSS e JavaScript**. O **Vue.js** (Options API) foi usado nas três partes que
+precisam se atualizar sozinhas, sem recarregar a página:
 
-## As rotas da API
+- o painel do sensor (`frontend/js/sensor.js`);
+- a lista de regiões e o histórico de alertas (`frontend/js/alagamentos.js`);
+- a barra de pesquisa (`frontend/js/busca.js`).
 
-Cada rota fica num arquivo da pasta `backend/Controllers/`:
+Serviços de fora que o sistema usa:
 
-| Rota | O que faz | Arquivo |
+- **Open-Meteo** — clima de Ribeirão Preto (gratuito e sem chave);
+- **feeds RSS** do Google Notícias, do G1 e da Agência Brasil — o sistema filtra e deixa passar
+  só as notícias que falam de chuva, temporal ou alagamento;
+- **Google Apps Script** — envia os emails pela conta do projeto e guarda os inscritos numa
+  planilha do Google Sheets;
+- **OpenStreetMap + Leaflet** — o mapa da página Alagamentos.
+
+### Quando os emails são enviados
+
+Um serviço roda em segundo plano (`MonitorDeAlertasService`) olhando as regiões e o clima:
+
+| Alerta | Quando | Limite |
 |---|---|---|
-| `GET /api/clima` | Clima de agora e dos próximos dias | `ClimaController.cs` |
-| `GET /api/noticias` | Notícias só de chuva e alagamento, por cidade | `NoticiasController.cs` |
-| `GET /api/enchentes` | Situação de cada região | `EnchentesController.cs` |
-| `GET /api/alertas` | Histórico de alertas | `AlertasController.cs` |
-| `GET /api/contatos` | Telefones de emergência | `ContatosController.cs` |
-| `GET /api/sensor/status` | Última leitura e histórico do sensor | `SensorController.cs` |
-| `POST /api/sensor-leitura` | Recebe a medida do sensor (Arduino pelo USB ou ESP32) | `SensorController.cs` |
-| `POST /api/simulacao/maquete` | Simula o nível da água (botões) | `SimulacaoController.cs` |
-| `POST /api/emails/inscrever` | Cadastra o email e manda as boas-vindas | `EmailsController.cs` |
-| `GET /api/emails/cancelar` | Página de cancelar inscrição | `EmailsController.cs` |
-| `/api/config/...` | Página de configuração (só no computador) | `ConfigController.cs` |
-| `GET /api` | Lista todas as rotas | `Program.cs` |
+| Alagamento | uma região entra em perigo | 1 a cada 30 minutos por região |
+| Chuva | começa a chover de verdade em Ribeirão Preto | 1 a cada 6 horas |
+| Temporal | previsão de trovoada ou chuva forte | 1 por dia |
 
-**APIs de fora que usamos:** Open-Meteo (clima), Google Notícias, G1 e Agência Brasil
-(notícias), Google Apps Script (envia os emails e guarda os inscritos numa planilha),
-OpenStreetMap + Leaflet (mapa).
+Quem se cadastra na página Início recebe na hora um email de boas-vindas do Bolin.
 
 ---
 
-## Vue.js
+## O sensor
 
-O Vue é usado em **três arquivos**, sempre com a **Options API** (`data`, `computed`,
-`methods`, `mounted`). O HTML de cada painel Vue fica **no próprio .html**, dentro de uma
-`<div id="app-...">`; o JavaScript fica no `.js` da página.
+![Página do sensor com a água em nível de perigo](docs/tela-sensor.jpg)
 
-| Onde | O que faz | HTML | JavaScript |
-|---|---|---|---|
-| Página Sensor | Nível da água **em tempo real** (busca a cada 3 segundos) e simulação | `sensor.html` → `<div id="app-sensor">` | `js/sensor.js` |
-| Página Alagamentos | Lista de regiões com **busca e filtro** | `alagamentos.html` → `<div id="app-regioes">` | `js/alagamentos.js` (PainelRegioes) |
-| Página Alagamentos | **Histórico de alertas** com filtro por local e "só ativos" | `alagamentos.html` → `<div id="app-alertas">` | `js/alagamentos.js` (PainelAlertas) |
-| Todas as páginas | **Barra de pesquisa** (resultados enquanto digita) | cabeçalho → `<div id="app-busca">` | `js/busca.js` |
+A maquete tem um sensor ultrassônico **HC-SR04** preso acima da água, apontando para baixo,
+ligado a um **Arduino**. O sensor mede a distância até a superfície da água e o Arduino
+escreve essa distância no cabo USB duas vezes por segundo:
 
-**Componentes reutilizáveis:** o cartão de região e o cartão de alerta. O HTML deles
-fica no fim do `alagamentos.html` (`<template id="molde-cartao-regiao">` e
-`<template id="molde-item-alerta">`) e eles recebem os dados por `props`.
+```
+Distancia: 15.2 cm
+```
 
-**Em uma frase:** os dados ficam em `data()`, os filtros em `computed`, as buscas na API
-em `methods`, o tempo real em `mounted` + `setInterval`, e quando um dado muda o Vue
-atualiza a tela sozinho.
+Ligação do sensor no Arduino: **VCC → 5V**, **GND → GND**, **Trig → pino 2**, **Echo → pino 3**.
+O código está em [`sensor/arduino/sensor_breno/sensor_breno.ino`](sensor/arduino/sensor_breno/sensor_breno.ino).
 
----
-
-## Emails
-
-Quem se cadastra na página inicial recebe o **email de boas-vindas do Bolin** e, depois,
-os alertas:
-- **Alagamento:** quando uma região entra em perigo (no máximo 1 a cada 30 minutos por região);
-- **Chuva:** quando começa a chover de verdade (no máximo 1 a cada 6 horas);
-- **Temporal:** trovoada ou chuva forte prevista (no máximo 1 por dia).
-
-Os emails saem pela conta **bolinhodechuva2026@gmail.com**, por um script do Google. Para
-ligar ou testar, abra **http://localhost:5080/configuracao.html** (só funciona no
-computador que roda o sistema). Lá estão os passos para conectar o Google e os botões de
-teste. Os inscritos ficam na planilha "Bolinho de Chuva — Inscritos", no Google Drive.
-
-Sem o Google conectado, os emails **não são enviados**: ficam salvos em
-`backend/emails-de-teste/` para vocês verem como ficaram.
-
----
-
-## Sensor
-
-O sensor do Breno é um **Arduino com o HC-SR04** (código em
-`sensor/arduino/sensor_breno/sensor_breno.ino`). Ele escreve no cabo USB, 2 vezes por
-segundo: `Distancia: 15.2 cm`.
-
-**Para ligar na apresentação:**
-1. Grave o código do Breno no Arduino e ligue o Arduino no computador pelo cabo USB.
-2. **Feche o Monitor Serial do Arduino IDE** (ele prende a porta).
-3. Abra o site no **Google Chrome ou no Microsoft Edge** (no Render ou com `npm start`)
-   e vá na página **Sensor**.
-4. Clique em **Conectar sensor** e escolha a porta do Arduino (ex.: `COM3`).
-5. Com a maquete **vazia**, clique em **Usar a distância de agora**: isso grava a altura do
-   sensor até o fundo. Pronto: ao pôr água, o tanque, o gráfico e os alertas reagem.
-
-Como funciona por dentro: o `js/sensor-usb.js` lê as linhas pelo cabo (Web Serial do
-navegador) e, a cada 1 segundo, manda a distância para a API:
+Com o Arduino ligado no computador, a página **Sensor** lê essas linhas pela **Web Serial**
+do navegador (`frontend/js/sensor-usb.js`) e, a cada segundo, manda a distância para a API:
 
 ```
 POST /api/sensor-leitura
 { "zonaId": "maquete-demo", "distanciaCm": 15.2, "alturaInstalacaoM": 0.25 }
 ```
 
-A API calcula **nível da água = altura do sensor − distância medida**. Na maquete:
-**atenção a partir de 12 cm**, **perigo a partir de 18 cm** (os limites ficam em
-`backend/Data/ZonasIniciais.cs`, zona `maquete-demo`).
+A API calcula **nível da água = altura do sensor − distância medida**. Na maquete, a região
+entra em **atenção a partir de 12 cm** de água e em **perigo a partir de 18 cm**. Esses limites
+ficam em `backend/Data/ZonasIniciais.cs`, na zona `maquete-demo`.
 
-Com uma placa com Wi-Fi (ESP32), dá para mandar direto pela internet, sem o computador:
-`sensor/esp32/bolinho_sensor/bolinho_sensor.ino` e `sensor/esp32/MAQUETE.md`.
+### Ligando o sensor
 
-Sem o sensor, use os botões de **simulação** na página Sensor: funciona igual.
+1. Grave o código no Arduino pelo Arduino IDE.
+2. Ligue o Arduino no computador pelo cabo USB e **feche o Monitor Serial** do Arduino IDE
+   (enquanto ele estiver aberto, a porta fica presa).
+3. Abra o site no **Google Chrome** ou no **Microsoft Edge** (o Firefox não tem Web Serial) e
+   vá na página **Sensor**.
+4. Clique em **Conectar sensor** e escolha a porta do Arduino.
+5. Com a maquete **vazia**, clique em **"Usar a distância de agora"**. Isso grava a altura do
+   sensor até o fundo, e a partir daí a água começa do zero.
+
+Se a placa não aparecer na lista, o Windows provavelmente está sem o driver do chip USB dela.
+No Gerenciador de Dispositivos ela aparece em "Outros dispositivos" com um triângulo amarelo.
+Placas com chip **FT232R** usam o [driver VCP da FTDI](https://ftdichip.com/drivers/vcp-drivers/);
+placas com chip **CH340** usam o driver da WCH.
+
+### Sem o sensor
+
+Na mesma página tem a parte **"Simular a água na maquete"**: botões para subir e descer a
+água, atalhos (Seca, Normal, Atenção, Perigo) e uma chuva que faz a água subir sozinha a cada
+2 segundos. A simulação passa pelo mesmo cálculo da leitura do sensor, então o tanque, o
+gráfico, a faixa vermelha e os emails funcionam igual.
+
+Também tem um código para **ESP32**, que manda a leitura direto pela Wi-Fi, sem precisar de
+computador: [`sensor/esp32/bolinho_sensor`](sensor/esp32/bolinho_sensor/bolinho_sensor.ino).
+A montagem está explicada em [`sensor/esp32/MAQUETE.md`](sensor/esp32/MAQUETE.md).
 
 ---
 
-## Comandos
+## Rodando no computador
+
+Precisa do [Node.js](https://nodejs.org) 18 ou mais novo. Na pasta do projeto:
+
+```
+npm install
+npm start
+```
+
+O `npm install` só precisa ser rodado na primeira vez; se o computador não tiver o .NET 8, ele
+baixa sozinho para dentro da pasta do projeto. O `npm start` liga o sistema e abre o navegador
+em **http://localhost:5080**. Para desligar, **Ctrl + C** no terminal.
 
 | Comando | O que faz |
 |---|---|
-| `npm install` | Prepara tudo (só na primeira vez) |
 | `npm start` | Liga o sistema em http://localhost:5080 |
-| `npm run rede` | Igual, mas aberto na rede Wi-Fi (para o ESP32) |
-| `npm run simulador` | Finge ser o sensor (em outro terminal) |
+| `npm run rede` | Igual, mas aceitando conexões de outros aparelhos da rede (para o ESP32) |
+| `npm run simulador` | Programa que finge ser o sensor (rodar em outro terminal) |
 | `npm run teste-email` | Testa o envio de emails |
+| `npm run teste-temporal` | Manda um alerta de temporal de teste |
+| `npm run teste-alagamento` | Manda um alerta de alagamento de teste |
+
+### Configurando os emails
+
+Os emails saem pela conta do projeto através de um script do Google Apps Script. Com o sistema
+ligado, abra **http://localhost:5080/configuracao.html** e siga os passos da página: ela mostra
+o código para colar no Google, o lugar onde colar o link e botões para testar cada tipo de alerta.
+
+O link e a chave do Google ficam em `backend/appsettings.Local.json`, que **não vai para o
+GitHub** (está no `.gitignore`). Enquanto o Google não estiver conectado, os emails não são
+enviados: ficam salvos em `backend/emails-de-teste/` para dar para ver como ficaram.
+
+A página de configuração só abre no próprio computador que está rodando o sistema; no site
+publicado ela fica desligada.
 
 ---
 
-## Hospedagem (Render)
+## API
 
-O site está publicado no **Render** (gratuito). Ele monta o sistema sozinho a partir do
-GitHub, usando o `Dockerfile` e o `render.yaml`.
+| Rota | O que faz | Arquivo |
+|---|---|---|
+| `GET /api` | Lista todas as rotas | `Program.cs` |
+| `GET /api/status` | Diz se o sistema está no ar | `StatusController.cs` |
+| `GET /api/clima` | Clima de agora e dos próximos dias | `ClimaController.cs` |
+| `GET /api/noticias` | Notícias de chuva e alagamento, por cidade | `NoticiasController.cs` |
+| `GET /api/enchentes` | Situação de cada região | `EnchentesController.cs` |
+| `GET /api/alertas` | Histórico de alertas | `AlertasController.cs` |
+| `GET /api/contatos` | Telefones de emergência | `ContatosController.cs` |
+| `POST /api/sensor-leitura` | Recebe a distância medida pelo sensor | `SensorController.cs` |
+| `GET /api/sensor/status` | Última leitura e histórico do sensor | `SensorController.cs` |
+| `POST /api/simulacao/maquete` | Simulação do nível da água | `SimulacaoController.cs` |
+| `POST /api/emails/inscrever` | Cadastra um email e manda as boas-vindas | `EmailsController.cs` |
+| `GET /api/emails/cancelar` | Cancela o recebimento de alertas | `EmailsController.cs` |
+| `/api/config/...` | Configuração dos emails (só no computador local) | `ConfigController.cs` |
 
-**Para atualizar o site:** mande os arquivos novos para o GitHub (**Add file → Upload
-files**, ou pelo GitHub Desktop). Em uns 5 minutos o Render atualiza sozinho.
-**Nunca envie** o `backend/appsettings.Local.json` (tem a chave do Google).
-
-**Plano gratuito:** o site dorme depois de 15 minutos sem acesso e leva cerca de
-1 minuto para acordar. Antes de apresentar, abra o site uns 2 minutos antes.
+Os arquivos ficam em `backend/Controllers/`. Para ver a API funcionando, é só abrir
+`/api` ou `/api/sensor/status` no navegador.
 
 ---
 
-## Se algo der errado
+## Onde está cada coisa
 
-- **Faixa amarela "Não consegui falar com o sistema":** ele não está ligado. Rode `npm start`.
-- **"A porta 5080 já está sendo usada":** o sistema já está ligado em outro terminal. Feche aquele.
-- **Clima "sem atualização":** a Open-Meteo não respondeu; o site mostra o último dado.
-- **Emails não chegam:** abra http://localhost:5080/configuracao.html e veja os ✔ e ✘.
+Cada página tem um HTML, um CSS e um JS com o mesmo nome (a página inicial é
+`index.html` + `inicio.css` + `inicio.js`).
+
+| Procurando… | Arquivo |
+|---|---|
+| Uma página (ex.: Sensor) | `frontend/sensor.html`, `frontend/css/sensor.css`, `frontend/js/sensor.js` |
+| Leitura do Arduino pelo cabo USB | `frontend/js/sensor-usb.js` |
+| Cabeçalho, faixa vermelha e sininho | `frontend/js/comum.js`, `frontend/css/comum.css` |
+| Barra de pesquisa | `frontend/js/busca.js` |
+| O Bolin do canto da tela | `frontend/js/bolin-assistente.js` |
+| Início do programa em C# | `backend/Program.cs` |
+| Busca do clima | `backend/Services/Clima/ClimaService.cs` |
+| Filtro das notícias | `backend/Services/Noticias/NoticiasService.cs` |
+| Cálculo do nível do sensor | `backend/Services/Regioes/ZonasService.cs` |
+| Quando os alertas saem | `backend/Services/Alertas/MonitorDeAlertasService.cs` |
+| Texto e envio dos emails | `backend/Services/Email/` |
+| Regiões e telefones | `backend/Data/ZonasIniciais.cs`, `backend/Data/ContatosData.cs` |
+
+```
+bolinho-de-chuva/
+├── frontend/          o site: uma página .html por aba, e as pastas css/, js/ e img/
+├── backend/           o programa em C#
+│   ├── Controllers/   as rotas da API
+│   ├── Services/      clima, notícias, regiões e sensor, alertas, emails
+│   ├── Models/        o formato de cada dado
+│   ├── Data/          regiões e telefones de emergência
+│   └── Recursos/      imagens dos emails e o script do Google
+├── sensor/            código do Arduino, do ESP32 e o simulador do sensor
+├── scripts/           o que cada comando npm faz
+├── docs/              imagens deste README
+└── Dockerfile, render.yaml   publicação no Render
+```
+
+---
+
+## Publicação
+
+O site está no **Render**, no plano gratuito. O Render monta o sistema a partir deste
+repositório usando o `Dockerfile` e o `render.yaml`, e publica sozinho de novo a cada
+alteração no `main` (leva uns 5 minutos).
+
+O link e a chave do Google ficam nas variáveis de ambiente do serviço no Render:
+`Google__UrlScript` e `Google__Chave`.
+
+---
+
+## Problemas comuns
+
+- **Faixa amarela "Não consegui falar com o sistema"**: o programa em C# não está ligado. Rode `npm start`.
+- **"A porta 5080 já está sendo usada"**: o sistema já está ligado em outro terminal.
+- **Clima "sem atualização"**: a Open-Meteo não respondeu; o site mostra o último dado que recebeu.
+- **Emails não chegam**: abra `localhost:5080/configuracao.html` e veja o que está marcado com ✘.
+- **"Conectar sensor" não acha o Arduino**: confira o driver do chip USB da placa (veja [O sensor](#o-sensor)).
+- **Sensor conectado, mas sem leitura**: feche o Monitor Serial do Arduino IDE e confira se o código está gravado na placa.
+
+---
+
+## Equipe
+
+- **Matheus** — site, API e integração
+- **Breno** — sensor e maquete
+
+PINT2 · Ribeirão Preto, 2026
