@@ -1,0 +1,36 @@
+/* ==========================================================================
+   Página Ajuda (ajuda.html): telefones de emergência.
+   ========================================================================== */
+
+/* ---------- Contatos ---------- */
+.contacts-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
+  gap:1rem;
+}
+
+.contact-card{
+  background:var(--superficie);
+  border:1px solid var(--linha);
+  border-radius:var(--raio-m);
+  padding:1.1rem 1.25rem;
+}
+
+.contact-card.prioridade-1{ border-color:#BCD5EA; }
+
+.contact-card .numero{
+  font-family:var(--fonte-titulo);
+  font-size:2rem;
+  font-weight:800;
+  line-height:1.1;
+  color:var(--azul);
+  text-decoration:none;
+  display:inline-block;
+  margin-bottom:.2rem;
+}
+
+.contact-card a.numero:hover{ text-decoration:underline; }
+
+.contact-card .nome{ font-weight:700; margin-bottom:.3rem; }
+
+.contact-card .descricao{ color:var(--tinta-suave); font-size:.95rem; margin:0; }

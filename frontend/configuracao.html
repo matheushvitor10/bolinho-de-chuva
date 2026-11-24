@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<!--
+  ============================================================================
+  PÁGINA: Configuração dos emails (só abre no computador que roda o sistema)
+    HTML ......... frontend/configuracao.html
+    Estilo ....... frontend/css/configuracao.css   (+ comum.css)
+    Código ....... frontend/js/configuracao.js
+  ============================================================================
+-->
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Configurar emails — Bolinho de Chuva</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="icon" href="img/favicon.ico" sizes="any">
+<link rel="stylesheet" href="css/comum.css">
+<link rel="stylesheet" href="css/configuracao.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-row">
+    <a class="brand" href="index.html">
+      <img src="img/emblema.png" alt="" class="brand-logo" width="52" height="52">
+      <span class="brand-text">
+        <span class="brand-name"><span class="brand-bolinho">Bolinho de</span> <span class="brand-chuva">Chuva</span></span>
+        <span class="brand-sub">Configuração dos emails</span>
+      </span>
+    </a>
+    <a class="voltar-site" href="index.html">← Voltar ao site</a>
+  </div>
+</header>
+
+<main class="wrap config-pagina">
+  <div class="section-head">
+    <h1>Configurar os emails</h1>
+    <p class="section-lead">Aqui vocês ligam o envio dos emails de boas-vindas e de alerta. Esta página só funciona no computador que está rodando o sistema.</p>
+  </div>
+
+  <div id="aviso-sem-acesso" class="config-card config-erro" hidden>
+    <strong>Não consegui falar com a API.</strong> Confira se o sistema foi ligado com <code>npm start</code> neste computador.
+  </div>
+
+  <!-- 1. Situação -->
+  <section class="config-card" aria-labelledby="t-situacao">
+    <h2 id="t-situacao">Como está agora</h2>
+    <div id="situacao" class="situacao"><p class="loading">Verificando…</p></div>
+  </section>
+
+  <!-- 2. Conectar o Google -->
+  <section class="config-card" aria-labelledby="t-google">
+    <h2 id="t-google">Conectar com o Google <span class="etiqueta">recomendado</span></h2>
+    <p>Os emails saem da conta <strong>bolinhodechuva2026@gmail.com</strong>. Esse jeito funciona até na rede da escola, não precisa de senha e cria uma <strong>planilha com a lista de inscritos</strong> no Google Drive. Leva uns 5 minutos e só precisa ser feito uma vez.</p>
+
+    <ol class="passos-config">
+      <li>
+        <strong>Copie o código do Bolinho de Chuva.</strong>
+        <div class="linha-botoes">
+          <button id="copiar-codigo" class="botao-principal" disabled>Copiar código</button>
+          <span id="copiado" class="copiado" role="status"></span>
+        </div>
+        <details class="ver-codigo">
+          <summary>Ver o código</summary>
+          <pre id="codigo-google">Carregando…</pre>
+        </details>
+      </li>
+      <li>
+        <strong>Crie o projeto no Google.</strong> Entre na conta <strong>bolinhodechuva2026@gmail.com</strong> e abra
+        <a href="https://script.new" target="_blank" rel="noopener">script.new</a>
+        (ou <a href="https://script.google.com" target="_blank" rel="noopener">script.google.com</a> → <em>Novo projeto</em>).
+        Clique em <em>Projeto sem título</em> e renomeie para <strong>Bolinho de Chuva</strong>.
+        Apague tudo o que estiver escrito, <strong>cole o código</strong> e clique no disquete 💾 para salvar.
+      </li>
+      <li>
+        <strong>Implante como App da Web.</strong> Clique em <em>Implantar</em> → <em>Nova implantação</em> →
+        na engrenagem ⚙ escolha <em>App da Web</em>. Deixe assim:
+        <ul>
+          <li><em>Executar como:</em> <strong>Eu</strong> (bolinhodechuva2026@gmail.com)</li>
+          <li><em>Quem pode acessar:</em> <strong>Qualquer pessoa</strong></li>
+        </ul>
+        e clique em <em>Implantar</em>.
+      </li>
+      <li>
+        <strong>Autorize.</strong> Clique em <em>Autorizar acesso</em> e escolha a conta. Vai aparecer
+        <em>“O Google não verificou este app”</em>: clique em <em>Avançado</em> →
+        <em>Acessar Bolinho de Chuva (não seguro)</em> → <em>Permitir</em>.
+        <span class="nota">Esse aviso é normal: o script é de vocês e não passou por revisão do Google.</span>
+      </li>
+      <li>
+        <strong>Cole aqui o link do App da Web</strong> (o Google mostra no fim, com um botão <em>Copiar</em>; ele termina em <code>/exec</code>):
+        <div class="form-config">
+          <label for="url-google" class="visualmente-oculto">Link do App da Web</label>
+          <input id="url-google" type="url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" spellcheck="false">
+          <button id="conectar-google" class="botao-principal">Conectar e testar</button>
+        </div>
+      </li>
+    </ol>
+    <div id="resultado-google" class="resultado" aria-live="polite"></div>
+  </section>
+
+  <!-- 3. Testar -->
+  <section class="config-card" aria-labelledby="t-testar">
+    <h2 id="t-testar">Testar</h2>
+    <div class="form-config">
+      <label for="email-teste" class="visualmente-oculto">Email para o teste</label>
+      <input id="email-teste" type="email" placeholder="seu email (vazio = o Gmail do projeto)" autocomplete="email">
+      <button id="enviar-teste" class="botao-principal">Enviar email de teste</button>
+    </div>
+    <p class="nota">Os alertas de teste vão para <strong>todos os inscritos</strong>, com o visual de verdade:</p>
+    <div class="linha-botoes">
+      <button class="botao-secundario" data-alerta="zona">Enviar alerta de alagamento</button>
+      <button class="botao-secundario" data-alerta="chuva">Enviar alerta de chuva</button>
+      <button class="botao-secundario" data-alerta="temporal">Enviar alerta de temporal</button>
+    </div>
+    <div id="resultado-teste" class="resultado" aria-live="polite"></div>
+  </section>
+
+  <!-- 4. Alternativa -->
+  <details class="config-card alternativa">
+    <summary>Outra opção: senha de app do Gmail</summary>
+    <p>Só use se o Google acima não der certo. Esse jeito costuma ser <strong>bloqueado em rede de escola</strong>. Precisa ativar a verificação em duas etapas na conta e gerar uma senha de app em
+      <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener">myaccount.google.com/apppasswords</a>.</p>
+    <div class="form-config">
+      <label for="senha-app" class="visualmente-oculto">Senha de app</label>
+      <input id="senha-app" type="password" placeholder="abcd efgh ijkl mnop" autocomplete="off">
+      <button id="salvar-senha" class="botao-secundario">Salvar senha de app</button>
+    </div>
+    <div id="resultado-senha" class="resultado" aria-live="polite"></div>
+  </details>
+</main>
+
+<footer class="site-footer">
+  <img src="img/emblema.png" alt="" width="40" height="40">
+  <p><strong>Bolinho de Chuva</strong> — Sistema de Prevenção de Alagamentos<br>
+  Projeto Integrador Interdisciplinar (PINT2), Ribeirão Preto, SP</p>
+</footer>
+
+<script src="js/configuracao.js"></script>   <!-- o código desta página -->
+</body>
+</html>

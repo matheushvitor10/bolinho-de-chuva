@@ -1,0 +1,58 @@
+/* ==========================================================================
+   Página Clima (clima.html): clima de agora e chuva dos próximos dias.
+   ========================================================================== */
+
+/* ---------- Clima ---------- */
+.weather-detail{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(190px, 1fr));
+  gap:.8rem;
+}
+
+.weather-card{
+  background:var(--superficie);
+  border:1px solid var(--linha);
+  border-radius:var(--raio-m);
+  padding:1.1rem 1.2rem;
+}
+
+.weather-card .value{
+  font-family:var(--fonte-titulo);
+  font-size:1.9rem;
+  font-weight:700;
+  line-height:1.15;
+  color:var(--azul);
+}
+
+.weather-card .label{ color:var(--tinta-suave); font-size:.92rem; }
+
+.weather-card.destaque{ background:var(--azul); border-color:var(--azul); }
+
+.weather-card.destaque .value, .weather-card.destaque .label{ color:#fff; }
+
+.weather-dias{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));
+  gap:.8rem;
+}
+
+.dia-card{
+  background:var(--superficie);
+  border:1px solid var(--linha);
+  border-radius:var(--raio-m);
+  padding:1rem 1.2rem;
+}
+
+.dia-card h3{ font-family:var(--fonte-texto); font-size:1rem; color:var(--tinta); }
+
+.dia-card h3::first-letter{ text-transform:uppercase; }
+
+.dia-card p{ margin:.2rem 0 0; color:var(--tinta-suave); font-size:.94rem; }
+
+.dia-chuva{ display:flex; align-items:center; gap:.6rem; margin-top:.6rem; }
+
+.dia-barra{ flex:1; height:8px; background:var(--ceu); border-radius:999px; overflow:hidden; }
+
+.dia-barra i{ display:block; height:100%; background:var(--azul-claro); border-radius:999px; }
+
+.dia-chuva span{ font-weight:700; font-size:.92rem; min-width:3ch; text-align:right; }

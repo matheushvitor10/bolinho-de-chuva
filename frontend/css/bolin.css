@@ -1,0 +1,77 @@
+/* ==========================================================================
+   Página Conheça o Bolin (bolin.html).
+   ========================================================================== */
+
+/* ---------- Conheça o Bolin ---------- */
+.bolin-apresentacao{
+  display:grid;
+  grid-template-columns:minmax(260px, 420px) 1fr;
+  gap:2.5rem;
+  align-items:start;
+}
+
+.bolin-figura{
+  margin:0;
+  background:radial-gradient(circle at 50% 38%, #fff 0%, var(--ceu) 72%);
+  border-radius:var(--raio-g);
+  padding:1.5rem 1rem 1rem;
+  text-align:center;
+}
+
+.bolin-figura img{
+  width:auto;
+  max-width:100%;
+  max-height:440px;
+  height:auto;
+  filter:drop-shadow(0 12px 14px rgba(18,63,102,.18));
+}
+
+.bolin-texto h1{ margin-bottom:.8rem; }
+
+.bolin-texto p{ max-width:62ch; }
+
+.bolin-intro{ font-size:1.2rem; }
+
+.bolin-faz{ margin:0; padding-left:1.2rem; display:grid; gap:.6rem; max-width:62ch; }
+
+.bolin-faz li::marker{ color:var(--crosta); }
+
+.dica-bolin{
+  margin-top:2.5rem;
+  display:flex;
+  gap:1.4rem;
+  align-items:center;
+  background:var(--azul);
+  color:#fff;
+  border-radius:var(--raio-g);
+  padding:1.5rem 1.8rem;
+}
+
+.dica-bolin img{ width:88px; height:88px; border-radius:50%; border:4px solid #fff; flex-shrink:0; }
+
+.dica-bolin h2{ color:#fff; font-size:1.5rem; }
+
+.dica-bolin p{ font-size:1.15rem; margin:.3rem 0 .9rem; max-width:60ch; min-height:3.4em; }
+
+.botao{
+  background:#fff;
+  color:var(--azul-escuro);
+  border:none;
+  font-family:var(--fonte-texto);
+  font-weight:700;
+  font-size:.98rem;
+  padding:.55rem 1.2rem;
+  border-radius:999px;
+  cursor:pointer;
+}
+
+.botao:hover{ background:var(--ceu); }
+
+@media (max-width: 820px){
+  .bolin-apresentacao{ grid-template-columns:1fr; }
+  .bolin-figura{ max-width:420px; }
+}
+
+@media (max-width: 640px){
+  .dica-bolin{ flex-direction:column; align-items:flex-start; padding:1.3rem; }
+}

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<!--
+  ============================================================================
+  PÁGINA: Alagamentos
+    HTML ......... frontend/alagamentos.html
+    Estilo ....... frontend/css/alagamentos.css   (+ comum.css, busca.css e bolin-assistente.css)
+    Código ....... frontend/js/alagamentos.js      (+ comum.js, busca.js e bolin-assistente.js)
+  ============================================================================
+-->
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alagamentos — Bolinho de Chuva</title>
+<meta name="description" content="Alertas de alagamento, notícias de chuva e clima ao vivo de Ribeirão Preto e região.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" rel="stylesheet">
+<link rel="icon" href="img/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" href="img/favicon.png">
+<link rel="stylesheet" href="css/comum.css">
+<link rel="stylesheet" href="css/busca.css">
+<link rel="stylesheet" href="css/bolin-assistente.css">
+<link rel="stylesheet" href="css/alagamentos.css">
+</head>
+<body>
+
+<a class="pular" href="#conteudo">Pular para o conteúdo</a>
+
+<!-- Aviso quando o sistema não responde -->
+<div id="aviso-api" class="aviso-api" hidden>
+  Não consegui falar com o sistema. Confira se ele está ligado (<code>npm start</code>).
+</div>
+
+<!-- Barra vermelha de alerta (js/comum.js) -->
+<div id="alert-bar" class="alert-bar" hidden role="alert">
+  <strong class="alert-bar-tag">Alerta</strong>
+  <span id="alert-bar-text"></span>
+  <button id="alert-bar-fechar" class="alert-bar-fechar" aria-label="Fechar o aviso">&times;</button>
+</div>
+
+<!-- ===================== CABEÇALHO (igual em todas as páginas) ===================== -->
+<header class="masthead">
+  <div class="masthead-row">
+    <a class="brand" href="index.html">
+      <img src="img/emblema.png" alt="" class="brand-logo" width="52" height="52">
+      <span class="brand-text">
+        <span class="brand-name"><span class="brand-bolinho">Bolinho de</span> <span class="brand-chuva">Chuva</span></span>
+        <span class="brand-sub">Sistema de Prevenção de Alagamentos</span>
+      </span>
+    </a>
+
+    <!-- Barra de pesquisa: feita em Vue.js. Código em js/busca.js -->
+    <div id="app-busca" class="busca-site" v-cloak>
+      <div class="busca-campo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+        <input ref="campo" v-model="termo" type="search" placeholder="Pesquisar no site (ex.: sensor, 199, Franca)"
+               role="combobox" aria-label="Pesquisar no site" aria-autocomplete="list" autocomplete="off"
+               :aria-expanded="String(mostrarLista)" aria-controls="busca-resultados"
+               :aria-activedescendant="mostrarLista && resultados.length ? 'busca-item-' + selecionado : null"
+               @focus="carregarExtras" @keydown.down.prevent="mover(1)" @keydown.up.prevent="mover(-1)"
+               @keydown.enter.prevent="escolherSelecionado" @keydown.esc="fechar">
+      </div>
+      <div v-if="mostrarLista" class="busca-resultados">
+        <ul v-if="resultados.length" id="busca-resultados" role="listbox" aria-label="Resultados da pesquisa">
+          <li v-for="(item, i) in resultados" :key="item.id" :id="'busca-item-' + i" role="option"
+              :aria-selected="String(i === selecionado)" :class="{ selecionado: i === selecionado }"
+              @mousedown.prevent="abrir(item)" @mouseenter="selecionado = i">
+            <span class="busca-rotulo">{{ item.rotulo }}</span>
+            <strong>{{ item.titulo }}</strong>
+            <span class="busca-resumo">{{ item.resumo }}</span>
+          </li>
+        </ul>
+        <p v-else class="busca-vazio">Nada encontrado para “{{ termo.trim() }}”. Tente: chuva, sensor, 199, leptospirose ou Franca.</p>
+      </div>
+    </div>
+
+    <!-- Clima do topo (js/comum.js) -->
+    <div class="weather-chip" id="weather-chip">
+      <span class="weather-temp">—°</span>
+      <span class="weather-cond">Carregando clima…</span>
+    </div>
+
+    <!-- Sininho (js/comum.js) -->
+    <button id="bell-btn" class="bell-btn" aria-label="Notificações" aria-expanded="false" aria-controls="notif-panel">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 4 1.5 5.5 2 6.5H4c.5-1 2-2.5 2-6.5Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
+      <span id="bell-count" class="bell-count" hidden>0</span>
+    </button>
+  </div>
+
+  <!-- Menu: cada item é uma página .html -->
+  <nav class="tabs" aria-label="Páginas do site">
+    <a class="tab-btn" href="index.html">Início</a>
+    <a class="tab-btn active" aria-current="page" href="alagamentos.html">Alagamentos</a>
+    <a class="tab-btn" href="sensor.html">Sensor</a>
+    <a class="tab-btn" href="clima.html">Clima</a>
+    <a class="tab-btn" href="riscos.html">Riscos</a>
+    <a class="tab-btn" href="cuidados.html">Cuidados</a>
+    <a class="tab-btn" href="ajuda.html">Ajuda</a>
+    <a class="tab-btn tab-bolin" href="bolin.html">
+      <img src="img/bolin-avatar.png" alt="" width="22" height="22"> Conheça o Bolin
+    </a>
+  </nav>
+</header>
+
+<!-- Painel do sininho (js/comum.js) -->
+<div id="notif-panel" class="notif-panel" hidden>
+  <div class="notif-panel-header">
+    <span>Notificações</span>
+    <button id="notif-close" aria-label="Fechar notificações">&times;</button>
+  </div>
+  <div id="notif-list" class="notif-list">
+    <p class="notif-empty">Nenhuma região em alerta agora.</p>
+  </div>
+  <p id="notif-permissao" class="notif-permissao"></p>
+  <a href="index.html#alerta-email" class="notif-link-email">Receber os alertas também por email</a>
+</div>
+
+<!-- ===================== CONTEÚDO DA PÁGINA: Alagamentos ===================== -->
+<main id="conteudo">
+  <div class="wrap">
+    <div class="section-head">
+      <h1>Onde está alagando agora</h1>
+      <p class="section-lead">Cada círculo é uma região monitorada. Clique num círculo para ver os detalhes.</p>
+    </div>
+    <p class="nota-simulado">
+      As regiões da cidade ainda usam <strong>dados de demonstração</strong>. Quando um sensor for instalado
+      numa região, ela passa a mostrar a etiqueta “sensor”.
+    </p>
+    <div class="legenda" aria-label="Legenda do mapa">
+      <span><i class="ponto tranquilo"></i>Tranquilo</span>
+      <span><i class="ponto atencao"></i>Atenção</span>
+      <span><i class="ponto perigo"></i>Perigo</span>
+    </div>
+    <div class="map-wrapper">
+      <div id="flood-map" role="region" aria-label="Mapa das regiões monitoradas"></div>
+    </div>
+    <!-- ===== Lista de regiões: feita em Vue.js. Código em js/alagamentos.js (PainelRegioes) ===== -->
+    <div id="app-regioes" v-cloak>
+      <div class="filtro-regioes">
+        <label class="busca-regiao">
+          <span class="visualmente-oculto">Buscar região pelo nome</span>
+          <input v-model="busca" type="search" placeholder="Buscar região pelo nome" autocomplete="off">
+        </label>
+        <div class="filtro-noticias" role="group" aria-label="Filtrar por situação">
+          <button v-for="op in opcoes" :key="op.valor" type="button" class="filtro-btn"
+                  :class="{ active: situacao === op.valor }" :aria-pressed="String(situacao === op.valor)"
+                  @click="situacao = op.valor">
+            {{ op.rotulo }} <span class="filtro-n">({{ contagem[op.valor] }})</span>
+          </button>
+        </div>
+      </div>
+
+      <p v-if="erro" class="loading">Não foi possível carregar as regiões agora.</p>
+      <p v-else-if="!carregou" class="loading">Carregando regiões…</p>
+      <div v-else class="zones-list">
+        <cartao-regiao v-for="z in regioesFiltradas" :key="z.id" :zona="z"></cartao-regiao>
+        <p v-if="regioesFiltradas.length === 0" class="loading">
+          Nenhuma região encontrada com esse filtro.
+          <button type="button" class="botao-link" @click="limparFiltros">Limpar filtros</button>
+        </p>
+      </div>
+    </div>
+
+    <div class="section-head historico-head">
+      <h2>Histórico de alertas</h2>
+      <p class="section-lead">Cada vez que uma região entra em atenção ou perigo, ou que começa a chover forte, o alerta aparece aqui. Ele fica <strong>ativo</strong> até a situação voltar ao normal.</p>
+    </div>
+    <!-- ===== Histórico de alertas: feito em Vue.js. Código em js/alagamentos.js (PainelAlertas) ===== -->
+    <div id="app-alertas" v-cloak>
+      <div class="filtro-regioes">
+        <label class="filtro-local">
+          <span>Local</span>
+          <select v-model="local">
+            <option value="todos">Todos os locais</option>
+            <option v-for="l in locais" :key="l" :value="l">{{ l }}</option>
+          </select>
+        </label>
+        <label class="filtro-ativos">
+          <input type="checkbox" v-model="soAtivos">
+          Só alertas ativos ({{ quantidadeAtivos }})
+        </label>
+      </div>
+
+      <p v-if="erro" class="loading">Não foi possível carregar o histórico agora.</p>
+      <p v-else-if="!carregou" class="loading">Carregando alertas…</p>
+      <div v-else class="zones-list">
+        <item-alerta v-for="a in alertasFiltrados" :key="a.id" :alerta="a"></item-alerta>
+        <p v-if="alertasFiltrados.length === 0" class="loading">
+          <span v-if="nenhumAlerta">Nenhum alerta até agora. Melhor assim!</span>
+          <span v-else>Nenhum alerta com esse filtro.
+            <button type="button" class="botao-link" @click="limparFiltros">Limpar filtros</button></span>
+        </p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ===================== COMPONENTES VUE (moldes dos cartões) =====================
+     Cada <template> abaixo é o HTML de um componente usado no js/alagamentos.js. -->
+
+<!-- Componente CartaoRegiao: o cartão de UMA região (recebe a "prop" zona) -->
+<template id="molde-cartao-regiao">
+  <div class="zone-card" :class="zona.status">
+    <div>
+      <h3>{{ zona.nome }}</h3>
+      <p>{{ zona.observacao }}</p>
+    </div>
+    <div class="zone-lado">
+      <span class="status-pill" :class="zona.status">{{ situacao }}, {{ nivel }} m</span>
+      <span class="zone-fonte" :class="{ sensor: deLeitura }">{{ origem }}, às {{ hora }}</span>
+    </div>
+  </div>
+</template>
+
+<!-- Componente ItemAlerta: o cartão de UM alerta (recebe a "prop" alerta) -->
+<template id="molde-item-alerta">
+  <div class="zone-card alerta-item" :class="[alerta.nivel, { encerrado: !alerta.ativo }]">
+    <div>
+      <p class="alerta-tipo">{{ tipo }} · {{ alerta.local }}</p>
+      <p>{{ alerta.detalhe }}</p>
+      <p class="alerta-periodo">{{ periodo }}</p>
+    </div>
+    <div class="zone-lado">
+      <span class="status-pill" :class="alerta.nivel">{{ nivel }}</span>
+      <span class="alerta-estado" :class="{ ativo: alerta.ativo }">{{ alerta.ativo ? "Ativo" : "Encerrado" }}</span>
+    </div>
+  </div>
+</template>
+
+<!-- ===================== RODAPÉ (igual em todas as páginas) ===================== -->
+<footer class="site-footer">
+  <img src="img/emblema.png" alt="" width="40" height="40">
+  <p><strong>Bolinho de Chuva</strong> — Sistema de Prevenção de Alagamentos<br>
+  Projeto Integrador Interdisciplinar (PINT2), Ribeirão Preto, SP<br>
+  <a href="configuracao.html" id="link-config" class="link-config" hidden>Configurar emails</a></p>
+</footer>
+
+<!-- ===================== BOLIN ASSISTENTE (js/bolin-assistente.js) =====================
+     Aparece ao entrar no sistema contando como está o tempo, sai depois de
+     30 segundos e fica espiando no canto. Clicando nele, abre as perguntas. -->
+<div id="bolin-assistente" class="bolin-assistente" data-estado="escondido">
+  <div id="bolin-balao" class="bolin-balao" role="region" aria-label="Mensagem do Bolin" hidden>
+    <button id="bolin-fechar" class="bolin-fechar" aria-label="Fechar a mensagem do Bolin">&times;</button>
+    <div id="bolin-conteudo" class="bolin-conteudo" aria-live="polite"></div>
+    <div class="bolin-tempo" aria-hidden="true"><i id="bolin-tempo-barra"></i></div>
+  </div>
+  <span class="bolin-chamada" aria-hidden="true">Clique em mim!</span>
+  <button id="bolin-personagem" class="bolin-personagem" aria-label="Conversar com o Bolin" aria-expanded="false" aria-controls="bolin-balao">
+    <span class="bolin-corpo"><img src="img/bolin-corpo.png" alt="" width="680" height="640"></span>
+  </button>
+</div>
+
+<!-- ===================== SCRIPTS ===================== -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>   <!-- mapas (Leaflet) -->
+<script src="js/biblioteca/vue.js"></script>   <!-- Vue.js 3 (biblioteca) -->
+<script src="js/comum.js"></script>                <!-- o que todas as páginas usam -->
+<script src="js/bolin-assistente.js"></script>     <!-- o Bolin do canto da tela -->
+<script src="js/busca.js"></script>                <!-- a barra de pesquisa -->
+<script src="js/alagamentos.js"></script>      <!-- o código desta página -->
+</body>
+</html>

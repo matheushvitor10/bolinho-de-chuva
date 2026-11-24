@@ -11,7 +11,11 @@ const path = require("path");
 const fs = require("fs");
 const { encontrarDotnet, RAIZ, PASTA_DOTNET_LOCAL, EH_WINDOWS } = require("./dotnet");
 
-const SOLUCAO = path.join(RAIZ, "BolinhoDeChuva.sln");
+// Os dois programas em C#: o sistema (backend) e o simulador do sensor
+const PROJETOS = [
+  path.join(RAIZ, "backend", "BolinhoDeChuva.Api.csproj"),
+  path.join(RAIZ, "sensor", "SensorSimulator", "SensorSimulator.csproj")
+];
 
 function titulo(texto) {
   console.log(`\n=== ${texto} ===`);
@@ -83,19 +87,21 @@ async function main() {
   }
 
   titulo("2/3  Baixando as dependências do C#");
-  rodarDotnet(dotnet, ["restore", SOLUCAO],
-    "Não consegui baixar as dependências do C#. Confira a internet e rode \"npm install\" de novo.");
+  for (const projeto of PROJETOS)
+    rodarDotnet(dotnet, ["restore", projeto],
+      "Não consegui baixar as dependências do C#. Confira a internet e rode \"npm install\" de novo.");
 
-  titulo("3/3  Compilando (back-end, site e simulador)");
-  rodarDotnet(dotnet, ["build", SOLUCAO, "--no-restore", "-v", "q", "-nologo"],
-    "A compilação falhou. A mensagem acima mostra o arquivo e a linha com problema.");
+  titulo("3/3  Compilando (o sistema e o simulador do sensor)");
+  for (const projeto of PROJETOS)
+    rodarDotnet(dotnet, ["build", projeto, "--no-restore", "-v", "q", "-nologo"],
+      "A compilação falhou. A mensagem acima mostra o arquivo e a linha com problema.");
 
   // Cria o arquivo de configurações pessoais (senha do email), se ainda não existir.
-  const pastaApi = path.join(RAIZ, "backend", "BolinhoDeChuva.Api");
+  const pastaApi = path.join(RAIZ, "backend");
   const configLocal = path.join(pastaApi, "appsettings.Local.json");
   if (!fs.existsSync(configLocal)) {
     fs.copyFileSync(path.join(pastaApi, "appsettings.Local.exemplo.json"), configLocal);
-    console.log("\nCriei o arquivo backend/BolinhoDeChuva.Api/appsettings.Local.json (é nele que vai a senha do email).");
+    console.log("\nCriei o arquivo backend/appsettings.Local.json (é nele que vai a senha do email).");
   }
 
   console.log("\n✔ Tudo pronto! Agora rode:  npm start\n");

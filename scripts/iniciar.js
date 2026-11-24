@@ -1,10 +1,11 @@
 // ============================================================================
-// Roda no "npm start": liga a API (back-end, C#) e o site (front-end) juntos,
-// e abre o navegador quando os dois estiverem prontos.
+// "npm start" — liga o Bolinho de Chuva e abre o navegador.
 //
-//   npm start       → API só no seu computador (uso normal)
-//   npm run rede    → API aberta na rede Wi-Fi (para o ESP32 conseguir mandar dados)
+//   npm start       → o sistema só no seu computador (uso normal)
+//   npm run rede    → aberto na rede Wi-Fi (para o ESP32 conseguir mandar dados)
 //
+// É UM programa só (a pasta backend, em C#): ele entrega o site (a pasta
+// frontend) e responde a API. Tudo em http://localhost:5080
 // Para desligar: Ctrl + C no terminal.
 // ============================================================================
 
@@ -14,8 +15,7 @@ const readline = require("readline");
 const { encontrarDotnet, RAIZ, EH_WINDOWS } = require("./dotnet");
 
 const MODO_REDE = process.argv.includes("--rede");
-const URL_SITE = "http://localhost:5500";
-const URL_API = "http://localhost:5080";
+const ENDERECO = "http://localhost:5080";
 
 const dotnet = encontrarDotnet();
 if (!dotnet) {
@@ -23,79 +23,62 @@ if (!dotnet) {
   process.exit(1);
 }
 
-const cores = { API: "\x1b[36m", SITE: "\x1b[35m", fim: "\x1b[0m" };
-const processos = [];
-const prontos = new Set();
+console.log("\nLigando o Bolinho de Chuva (na primeira vez demora um pouco mais)…\n");
+
+const perfil = MODO_REDE ? "API-rede" : "API-local";
+const programa = spawn(dotnet.comando, ["run", "--project", "backend", "--launch-profile", perfil], {
+  cwd: RAIZ,
+  env: { ...dotnet.env, ASPNETCORE_ENVIRONMENT: "Development" },
+  detached: !EH_WINDOWS // no Linux/Mac, permite desligar o grupo inteiro de processos
+});
+
 let encerrando = false;
 
-function iniciar(nome, args) {
-  const filho = spawn(dotnet.comando, args, {
-    cwd: RAIZ,
-    env: { ...dotnet.env, ASPNETCORE_ENVIRONMENT: "Development" },
-    detached: !EH_WINDOWS // no Linux/Mac, permite desligar o grupo inteiro de processos
-  });
-  processos.push(filho);
-
-  const prefixo = `${cores[nome]}[${nome}]${cores.fim}`;
-  for (const fluxo of [filho.stdout, filho.stderr]) {
-    readline.createInterface({ input: fluxo }).on("line", linha => {
-      console.log(`${prefixo} ${linha}`);
-
-      if (/Now listening on/i.test(linha)) {
-        prontos.add(nome);
-        if (prontos.size === 2) quandoTudoEstiverPronto();
-      }
-      if (/address already in use|EADDRINUSE|10048/i.test(linha)) {
-        console.log(`${prefixo} A porta já está sendo usada. Talvez o sistema já esteja ligado em outro terminal — feche ele e rode "npm start" de novo.`);
-      }
-    });
-  }
-
-  filho.on("exit", codigo => {
-    if (!encerrando) {
-      console.log(`${prefixo} parou (código ${codigo}). Desligando o resto…`);
-      desligar(1);
+for (const fluxo of [programa.stdout, programa.stderr]) {
+  readline.createInterface({ input: fluxo }).on("line", linha => {
+    console.log(linha);
+    if (/Now listening on/i.test(linha)) avisarQueEstaNoAr();
+    if (/address already in use|EADDRINUSE|10048/i.test(linha)) {
+      console.log('A porta 5080 já está sendo usada. Talvez o sistema já esteja ligado em outro terminal — feche ele e rode "npm start" de novo.');
     }
   });
 }
 
-function quandoTudoEstiverPronto() {
+programa.on("exit", codigo => {
+  if (!encerrando) {
+    console.log(`O sistema parou (código ${codigo}).`);
+    process.exit(1);
+  }
+});
+
+let jaAvisou = false;
+function avisarQueEstaNoAr() {
+  if (jaAvisou) return;
+  jaAvisou = true;
   console.log("\n" + "=".repeat(60));
   console.log("  Bolinho de Chuva está no ar!");
-  console.log(`  Site: ${URL_SITE}`);
-  console.log(`  API:  ${URL_API}`);
-  console.log(`  Configurar emails: ${URL_SITE}/config.html`);
+  console.log(`  Site:              ${ENDERECO}`);
+  console.log(`  API:               ${ENDERECO}/api`);
+  console.log(`  Configurar emails: ${ENDERECO}/configuracao.html`);
   if (MODO_REDE) console.log("  Modo rede: o ESP32 pode mandar dados para o IP deste computador, porta 5080.");
   console.log("  Para desligar: Ctrl + C");
   console.log("=".repeat(60) + "\n");
-  abrirNavegador(URL_SITE);
-}
-
-function abrirNavegador(url) {
-  const comando = EH_WINDOWS ? `start "" "${url}"` : process.platform === "darwin" ? `open "${url}"` : `xdg-open "${url}"`;
+  const comando = EH_WINDOWS ? `start "" "${ENDERECO}"` : process.platform === "darwin" ? `open "${ENDERECO}"` : `xdg-open "${ENDERECO}"`;
   exec(comando, () => { /* se não conseguir abrir, a pessoa usa o link mostrado acima */ });
 }
 
-function desligar(codigo = 0) {
+function desligar() {
   if (encerrando) return;
   encerrando = true;
-  for (const filho of processos) {
-    if (filho.exitCode !== null) continue;
-    try {
-      // "dotnet run" abre outro processo por baixo; precisamos desligar os dois,
-      // senão as portas 5080/5500 continuam ocupadas.
-      if (EH_WINDOWS) spawnSync("taskkill", ["/pid", String(filho.pid), "/T", "/F"], { stdio: "ignore" });
-      else process.kill(-filho.pid, "SIGTERM");
-    } catch { /* já tinha parado */ }
-  }
-  setTimeout(() => process.exit(codigo), 500);
+  console.log("\nDesligando o Bolinho de Chuva…");
+  try {
+    // "dotnet run" abre outro processo por baixo; precisamos desligar os dois,
+    // senão a porta 5080 continua ocupada.
+    if (EH_WINDOWS) spawnSync("taskkill", ["/pid", String(programa.pid), "/T", "/F"], { stdio: "ignore" });
+    else process.kill(-programa.pid, "SIGTERM");
+  } catch { /* já tinha parado */ }
+  setTimeout(() => process.exit(0), 500);
 }
 
-process.on("SIGINT", () => { console.log("\nDesligando o Bolinho de Chuva…"); desligar(0); });
-process.on("SIGTERM", () => desligar(0));
-
-console.log("\nLigando o Bolinho de Chuva (na primeira vez demora um pouco mais)…\n");
-
-const perfilApi = MODO_REDE ? "API-rede" : "API-local";
-iniciar("API", ["run", "--project", path.join("backend", "BolinhoDeChuva.Api"), "--launch-profile", perfilApi]);
-iniciar("SITE", ["run", "--project", path.join("frontend", "BolinhoDeChuva.Web")]);
+process.on("SIGINT", desligar);
+process.on("SIGTERM", desligar);

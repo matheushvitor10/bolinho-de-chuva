@@ -19,7 +19,7 @@ fetch(url, { method: "POST" })
     const tudoOk = dados.passos.every(p => p.ok);
     console.log(tudoOk
       ? "\nTudo certo! O envio de emails está funcionando.\n"
-      : "\nAlgo precisa ser arrumado: veja o item marcado com ✘ acima.\nDica: tudo isso também dá pra fazer sem terminal, em http://localhost:5500/config.html\n");
+      : "\nAlgo precisa ser arrumado: veja o item marcado com ✘ acima.\nDica: tudo isso também dá pra fazer sem terminal, em http://localhost:5080/configuracao.html\n");
     if (!tudoOk) process.exitCode = 1;
   })
   .catch(erro => {

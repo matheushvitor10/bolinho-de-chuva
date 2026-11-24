@@ -13,7 +13,7 @@ services:
     envVars:
       # Os dois valores abaixo são os do Google (emails + planilha de inscritos).
       # O Render vai pedir eles na hora de criar. Copie do arquivo
-      # backend/BolinhoDeChuva.Api/appsettings.Local.json do seu computador:
+      # backend/appsettings.Local.json do seu computador:
       #   Google:UrlScript → Google__UrlScript
       #   Google:Chave     → Google__Chave
       - key: Google__UrlScript

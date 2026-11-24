@@ -3,8 +3,11 @@
 **/obj/
 .dotnet/
 node_modules/
-.vs/
 **/appsettings.Local.json
 **/dados/
 **/emails-de-teste/
 sensor/
+
+# Pastas da versão antiga (se ainda estiverem no GitHub, o Render ignora)
+backend/BolinhoDeChuva.Api/
+frontend/BolinhoDeChuva.Web/

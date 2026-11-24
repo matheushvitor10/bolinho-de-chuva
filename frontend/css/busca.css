@@ -1,0 +1,112 @@
+/* ==========================================================================
+   Barra de pesquisa do topo (js/busca.js) — aparece em todas as páginas.
+   ========================================================================== */
+
+.busca-regiao{ flex:1 1 260px; max-width:420px; }
+
+.busca-regiao input{
+  width:100%;
+  font-family:var(--fonte-texto);
+  font-size:1rem;
+  padding:.55rem 1rem;
+  border:1.5px solid var(--linha);
+  border-radius:999px;
+  background:var(--superficie);
+  color:var(--tinta);
+}
+
+.busca-regiao input:focus{ border-color:var(--azul-claro); outline:none; box-shadow:0 0 0 3px rgba(59,143,208,.25); }
+
+.busca-site{
+  position:relative;
+  flex:1 1 280px;
+  max-width:440px;
+  margin-left:auto;
+}
+
+.busca-campo{ position:relative; }
+
+.busca-campo svg{
+  position:absolute;
+  left:.9rem; top:50%;
+  width:18px; height:18px;
+  transform:translateY(-50%);
+  color:var(--tinta-suave);
+  pointer-events:none;
+}
+
+.busca-campo input{
+  width:100%;
+  font-family:var(--fonte-texto);
+  font-size:.95rem;
+  padding:.55rem 1rem .55rem 2.5rem;
+  border:1.5px solid var(--linha);
+  border-radius:999px;
+  background:var(--fundo);
+  color:var(--tinta);
+}
+
+.busca-campo input:focus{ border-color:var(--azul-claro); background:var(--superficie); outline:none; box-shadow:0 0 0 3px rgba(59,143,208,.25); }
+
+.busca-resultados{
+  position:absolute;
+  top:calc(100% + 8px);
+  left:0;
+  width:max(100%, 420px);
+  max-width:calc(100vw - 2rem);
+  max-height:70vh;
+  overflow-y:auto;
+  background:var(--superficie);
+  border:1px solid var(--linha);
+  border-radius:var(--raio-m);
+  box-shadow:0 18px 40px rgba(18,63,102,.18);
+  z-index:1150;
+}
+
+.busca-resultados ul{ list-style:none; margin:0; padding:.4rem; }
+
+.busca-resultados li{
+  display:grid;
+  grid-template-columns:7.2rem 1fr;
+  gap:.1rem .7rem;
+  padding:.6rem .7rem;
+  border-radius:var(--raio-p);
+  cursor:pointer;
+}
+
+.busca-resultados li.selecionado{ background:var(--ceu); }
+
+.busca-resultados strong{ font-size:.95rem; color:var(--tinta); line-height:1.35; }
+
+.busca-rotulo{
+  grid-row:span 2;
+  align-self:start;
+  font-size:.72rem;
+  font-weight:700;
+  color:var(--azul-escuro);
+  background:var(--ceu);
+  border-radius:999px;
+  padding:.15rem .55rem;
+  margin-top:.15rem;
+  justify-self:start;
+  text-align:center;
+}
+
+.busca-resultados li.selecionado .busca-rotulo{ background:var(--superficie); }
+
+.busca-resumo{ font-size:.85rem; color:var(--tinta-suave); line-height:1.4; }
+
+.busca-vazio{ margin:0; padding:.9rem 1rem; font-size:.92rem; color:var(--tinta-suave); }
+
+/* Destaque no lugar que a pesquisa encontrou */
+.destaque-busca{ animation:destaque-busca 2.4s ease-out; border-radius:var(--raio-m); }
+
+@keyframes destaque-busca{
+  0%, 35%{ box-shadow:0 0 0 4px var(--crosta); }
+  100%{ box-shadow:0 0 0 4px rgba(201,134,60,0); }
+}
+
+@media (max-width: 640px){
+  .busca-site{ order:3; flex-basis:100%; max-width:none; margin:.4rem 0 0; }
+  .busca-resultados{ width:100%; }
+}
